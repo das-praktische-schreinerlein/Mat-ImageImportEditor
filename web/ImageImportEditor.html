@@ -1,0 +1,1338 @@
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+    <title>ImageImportEditor</title>
+    <meta name="title" content="ImageImport-Editor" />
+    <meta name="description" content="ImageImport-Editor - prepare Import-Scripts for imageimport" />
+    <meta name="keywords" content="JSON, Image-Import, Preparation" />
+    <meta name="language" content="de" />
+
+    <script src="http://www.michas-ausflugstipps.de/jqplot/jquery.min.js" type="text/javascript"></script>
+    <script src="http://www.michas-ausflugstipps.de/jsres/JMATAllIn.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+    /**
+     * <h4>FeatureDomain:</h4>
+     *     imagemanagement
+     *
+     * <h4>FeatureDescription:</h4>
+     *     software for management of imagefiles
+     * 
+     * @author Michael Schreiner <ich@michas-ausflugstipps.de>
+     * @category imagemanagement
+     * @copyright Copyright (c) 2005-2014, Michael Schreiner
+     * @license http://mozilla.org/MPL/2.0/ Mozilla Public License 2.0
+     *
+     * This Source Code Form is subject to the terms of the Mozilla Public
+     * License, v. 2.0. If a copy of the MPL was not distributed with this
+     * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+     */
+
+    /* 
+     * ########################################
+     * ###
+     * ### Toolbox 
+     * ###
+     * ######################################## 
+     */
+
+     function ucFirstAllWords(str) {
+         var pieces = str.split(" ");
+         for (var i = 0; i < pieces.length; i++ ) {
+             var j = pieces[i].charAt(0).toUpperCase();
+             pieces[i] = j + pieces[i].substr(1).toLowerCase();
+         }
+         return pieces.join(" ");
+     }
+     
+     function downloadAsFile($link, data, fileName, mime, encoding) {
+         if (mime == "undefind") {
+             mime = "application/text";
+         }
+         if (encoding == "undefind") {
+             mime = "uft-8";
+         }
+         // data URI
+         var dataURI = 'data:' + mime + ';charset=' + encoding + ','
+                 + encodeURIComponent(data);
+
+         // set link
+         $link.attr({
+             'download' : fileName,
+             'href' : dataURI,
+             'target' : '_blank'
+         });
+     }
+     
+
+     function addKeywordText(elementName, keyword) {
+         var str = keyword;
+         str = str.replace(/<\/?.*?\/?>/g, String.fromCharCode(13));
+         var newText = document.createTextNode(str);
+         var field = document.getElementById(elementName);
+         field.value = field.value + keyword;
+     }    
+     
+     /* 
+      * ########################################
+      * ###
+      * ### Form-Elements
+      * ###
+      * ######################################## 
+      */
+     
+     function appendInputText(config, $parent, configField, id, data, content) {
+         var name = configField["name"];
+         var required = configField["required"];
+         var labelName = ucFirstAllWords(name);
+         var $label = appendLabel4Element($parent, "labelinput_" + name + "_" + id,
+                 "label_input_text label_input_" + name,
+                 labelName, "input_" + name + "_" + id, required);
+
+         var classRequired = "";
+         if (required != "undefinded" && required) {
+             classRequired = " required ";
+         }
+         $parent.append("<input type='text' "
+                 + " id='input_" + name + "_" + id + "'"
+                 + " class='input_text input_" + name + classRequired + "'"
+                 + " value='" + content + "'" + classRequired
+                 + " size='100' />"
+                 );
+     }
+
+     function getInputText(config, $parent, configField, data) {
+         // find field
+         var inputFields = $parent.find(".input_" + configField["name"]);
+
+         // iterate blocks from $contentline
+         $.each(inputFields, function (index, inputField) {
+                 console.log("inputfieldName: " + configField["name"] + " contentfield:" + index + " field:" + $(inputField).val());
+                 data[configField["name"]] = $(inputField).val();
+             }
+         );
+     }
+
+     function appendInputDate(config, $parent, configField, id, data, content) {
+         var name = configField["name"];
+         var required = configField["required"];
+         var labelName = ucFirstAllWords(name);
+         var $label = appendLabel4Element($parent, "labelinput_" + name + "_" + id,
+                 "label_input_text label_input_" + name,
+                 labelName, "input_" + name + "_" + id, required);
+
+         var classRequired = "";
+         if (required != "undefinded" && required) {
+             classRequired = " required ";
+         }
+         $parent.append("<input type='text' "
+                 + " id='input_" + name + "_" + id + "'"
+                 + " class='input_date input_" + name + classRequired + "'"
+                 + " value='" + content + "'" + classRequired
+                 + " size='25' />"
+                 );
+     }
+
+     function appendInputTextArea(config, $parent, configField, id, data, content) {
+         var name = configField["name"];
+         var required = configField["required"];
+         var labelName = ucFirstAllWords(name);
+         var $label = appendLabel4Element($parent, "labelinput_" + name + "_" + id,
+                 "label_input_textarea label_input_" + name,
+                 labelName, "input_" + name + "_" + id, required);
+
+         var classRequired = "";
+         if (required != "undefinded" && required) {
+             classRequired = " required ";
+         }
+         $parent.append("<textarea "
+                 + " id='input_" + name + "_" + id + "'"
+                 + " class='input_textarea input_textarea_" + name + classRequired + "'"
+                 + classRequired
+                 + " cols='30' rows='2'>"
+                 + content
+                 + "</textarea>"
+                 );
+     }
+
+     function getInputTextArea(config, $parent, configField, data) {
+         // find field
+         var inputFields = $parent.find(".input_textarea_" + configField["name"]);
+
+         // iterate blocks from $contentline
+         $.each(inputFields, function (index, inputField) {
+                 console.log("textareafieldName: " + configField["name"] + " contentfield:" + index + " field:" + $(inputField).val());
+                 data[configField["name"]] = $(inputField).val();
+             }
+         );
+     }
+
+     function appendInputSelectRate(config, $parent, configField, id, data, content) {
+         var rates = config.configRates[configField['name'].toUpperCase()];
+         var options = "";
+         for (var index = 0; index < rates.length; ++index) {
+             var rate = rates[index];
+             var flgSelected = "";
+             if (rate.value == content) {
+                 flgSelected = "selected";
+             }
+             options += "<option value='" + rate.value + "' " + flgSelected + " >"
+                     + rate.shortName + " " + rate.longName + "</ option>";
+         }
+
+         var name = configField["name"];
+         var required = configField["required"];
+         var labelName = ucFirstAllWords(name);
+         var $label = appendLabel4Element($parent, "labelinput_" + name + "_" + id,
+                 "label_input_select label_input_" + name,
+                 labelName, "input_" + name + "_" + id, required);
+
+         var classRequired = "";
+         if (required != "undefinded" && required) {
+             classRequired = " required ";
+         }
+         $parent.append("<select "
+                 + " id='input_" + name + "_" + id + "'"
+                 + " class='input_select input_select_" + name + classRequired + "'"
+                 + classRequired
+                 + " value='" + content + "'>"
+                 + options
+                 + "</select>"
+                 );
+     }
+
+     function getInputSelectRate(config, $parent, configField, data) {
+         // find field
+         var inputFields = $parent.find(".input_select_" + configField["name"]);
+
+         // iterate blocks from $contentline
+         $.each(inputFields, function (index, inputField) {
+                 console.log("inputfieldName: " + configField["name"] + " contentfield:" + index + " field:" + $(inputField).val());
+                 data[configField["name"]] = $(inputField).val();
+             }
+         );
+     }
+
+     function appendInputText4Keywords(config, $parent, configField, id, data, content) {
+         // append input
+         appendInputTextArea(config, $parent, configField, id, data, content);
+         // append url
+         $parent.append("<a href='#' onclick=\"javascript:editKeywords('" + id + "'); return false;\">Edit</a>");
+     }
+
+     function appendInputText4Name(config, $parent, configField, id, data, content) {
+         // append input
+         appendInputText(config, $parent, configField, id, data, content);
+         // append url
+         $parent.append("<a href='#' onclick=\"javascript:recalcName('" + id + "'); return false;\">Recalc</a>");
+     }
+
+
+     /* 
+      * ########################################
+      * ###
+      * ### Visualize Data
+      * ###
+      * ######################################## 
+      */
+      function genTableHead(config, $container) {
+          // init Table
+          appendHeadLine(config, $container);
+          $container.append("<div id='headLineDummy' class='headLineDummy'> </div>");
+      }
+
+     function appendHeadLine(config, $parent) {
+         // init vars
+         var lstConfigBlocks = config.configBlocks;
+
+         // append new line
+         var $container = appendDiv4Element($parent, "head_line", "head_line", "");
+
+         // iterate datablocks
+         for (var blockName in lstConfigBlocks) {
+             // append datablocks
+             appendHeadLine4Block(config, $container, blockName);
+         }
+
+         // return new line-JqueryObj
+         return $container;
+     }
+
+     function appendHeadLine4Block(config, $parent, blockName) {
+         // init vars
+         var lstConfigFields = config.configBlocks[blockName];
+
+         // append new block
+         var $container = appendDiv4Element($parent, "head_block_" + blockName,
+                 "head_block " + " block_" + blockName + " head_block_" + blockName,
+                 "");
+
+         // iterate fields
+         for (var index = 0; index < lstConfigFields.length; ++index) {
+             var fieldConfig = lstConfigFields[index];
+
+             // append field
+             var $element = appendHeadElement4Field(config, $container, fieldConfig);
+         }
+
+         // return new block-JqueryObj
+         return $container;
+     }
+
+     function appendHeadElement4Field(config, $parent, fieldConfig) {
+         var name = fieldConfig["name"];
+         var labelName = ucFirstAllWords(name);
+         var $label = appendLabel4Element($parent, "label_head_column_" + name,
+                 "label_head_column label_column_" + name + " label_head_column_" + name,
+                 labelName);
+         var $element = appendDiv4Element($parent, "head_column_" + name,
+                 "head_column column_" + name + " head_column_" + name,
+                 labelName);
+         return $element;
+     }
+
+     function genTableContent(config, $container, dataContainer) {
+         // iterate data
+         for (var index = 0; index < dataContainer.data.length; ++index) {
+             var data = dataContainer.data[index];
+
+             // append line
+             var $element = appendContentLine(config, $container, index+1, data);
+         }
+     }
+
+     function appendContentLine(config, $parent, id, data) {
+         // init vars
+         var lstConfigBlocks = config.configBlocks;
+
+         // append new line
+         var $container = appendDiv4Element($parent, "content_line_" + id, "content_line", "");
+
+         // iterate datablocks
+         for (var blockName in lstConfigBlocks) {
+             // append datablocks
+             appendContentLine4Block(config, $container, blockName, id, data);
+         }
+
+         // return new line-JqueryObj
+         return $container;
+     }
+
+     function appendContentLine4Block(config, $parent, blockName, id, data) {
+         // init vars
+         var lstConfigFields = config.configBlocks[blockName];
+
+         // append new block
+         var $container = appendDiv4Element($parent, "content_block_" + blockName + "_" + id,
+                 "content_block " + " block_" + blockName + " content_block_" + blockName,
+                 "");
+
+         // iterate fields
+         for (var index = 0; index < lstConfigFields.length; ++index) {
+             // get fieldConfig
+             var fieldConfig = lstConfigFields[index];
+
+             // append generated field
+             var $element = appendContentElement4Field(config, $container, fieldConfig, id, data);
+         }
+
+         // return new block-JqueryObj
+         return $container;
+     }
+
+     function appendContentElement4Field(config, $parent, fieldConfig, id, data) {
+         // init vars
+         var fieldName = fieldConfig["name"];
+         var funcRef = fieldConfig["editor"];
+
+         // read content
+         var content = data[fieldName];
+         if (content == "undefined" || content == undefined) {
+             content = "";
+         }
+
+         // append new field
+         var $element = appendDiv4Element($parent, "content_column_" + fieldName + "_" + id,
+                 "content_column column_" + fieldName + " content_column_" + fieldName, "");
+
+         // insert content (input or data)
+         if (funcRef != null) {
+             content = funcRef(config, $element, fieldConfig, id, data, content);
+         } else {
+             $element.append(content);
+         }
+
+         // return new field-JqueryObj
+         return $element;
+     }
+
+
+     function appendDiv4Element($parent, id, styleClass, content) {
+         // create new html-Element
+         var str = "<div id='" + id + "' class='" + styleClass + "'>" + content + "</div>";
+
+         // append to Parent
+         var $element = $(str).appendTo($parent);
+         return $element;
+     }
+
+     function appendLabel4Element($parent, id, styleClass, content, parent, required) {
+         var classRequired = "";
+         if (required != "undefinded" && required) {
+             classRequired = " required ";
+         }
+
+         // create new html-Element
+         var str = "<label id='" + id + "' class='label " + styleClass + classRequired + "' for='" + parent + "'>" + content + "</label>";
+
+         // append to Parent
+         var $element = $(str).appendTo($parent);
+         return $element;
+     }
+
+     /* 
+      * ########################################
+      * ###
+      * ### Services
+      * ###
+      * ######################################## 
+      */
+     function editKeywords(id) {
+         // field to setup
+         var srcElementId = "input_Keywords_" + id;
+
+         // get keywordsDiv
+         var $keywordsDiv = $("#divKeywordsEditor");
+         $keywordsDiv.css("top", "160px");
+         $keywordsDiv.css("left", "10px");
+         $keywordsDiv.css("display", "block");
+         
+         // open editor
+         openKeywordEditor($keywordsDiv, srcElementId, null, null);
+         
+     }
+         
+     function recalcName(id) {
+         // field to setup
+         var $name = $("#input_Name_" + id);
+
+         // config fields
+         var praefix = $("#input_Praefix_" + id).val();
+         var selector = "#input_Type_" + id + " option:selected";
+         var type = $(selector).text();
+         var startDate = $("#input_MyStartDate_" + id).val().substring(0, 10);
+         var endDate = $("#input_MyEndDate_" + id).val().substring(0, 10);
+         var ort = $("#input_MyOrt_" + id).val();
+         var personen = $("#input_Personen_" + id).val();
+
+         var newName = "";
+         if (praefix != "") {
+             newName += praefix + ": ";
+         }
+         if (type != "") {
+             type = type.substring(type.indexOf(" ") + 1, type.length);
+             newName += type;
+         }
+         if (personen != "") {
+             newName += " mit " + personen;
+         }
+         if (ort != "") {
+             newName += " bei " + ort;
+         }
+         if (startDate == endDate) {
+             newName += " " + startDate;
+         } else {
+             newName += " " + startDate + "-" + endDate;
+         }
+         
+         // set new name
+         $name.val(newName);
+         
+         return newName;
+     }
+
+     /* 
+      * ########################################
+      * ###
+      * ### Load Data
+      * ###
+      * ######################################## 
+      */
+      function loadDataFromServer(url) {
+         // load per JSon
+         $.getJSON( url, function ( data ) {
+                 // init items
+                 var items = new Array();
+
+                 // iterate items
+                 $.each( data, function(number, item ) {
+                         // add items
+                         items.push(item);
+                     }
+                 );
+
+                 // set dataContainer array and flag
+                 dataContainer.data = items;
+                 dataContainer.flgDataLoaded = true;
+                 
+                 // initApp
+                 initApp();
+             }
+         ).done(function(msg) {
+                 // second success
+             }
+         ).fail(function(msg) {
+                 // error handling
+                 console.log( "error" + msg);
+             }
+         ).always(function(msg) {
+                 // full complete
+                 console.log( "complete" + msg);
+             }
+         );
+     }
+
+     function handleImportJSONFileSelect(evt) {
+         var files = evt.target.files; // FileList object
+
+         // Loop through the FileList.
+         for (var i = 0, numFiles = files.length; i < numFiles; i++) {
+             var file = files[i];
+             var reader = new FileReader();
+
+             // config reader
+             reader.onload = function(res) {
+                 console.log("read fileName:" + file.name);
+                 var data = jQuery.parseJSON( res.target.result );
+
+                 // init items
+                 var items = new Array();
+                 $.each( data, function(number, item ) {
+                         // add items
+                         items.push(item);
+                     }
+                 );
+
+                 // set dataContainer array and flag
+                 dataContainer.data = items;
+                 dataContainer.flgDataLoaded = true;
+                 
+                 // initApp
+                 initApp();
+             };
+
+             // read the file
+             reader.readAsText(file);
+             
+             i = files.length +1000;
+         }
+     }
+
+     /* 
+      * ########################################
+      * ###
+      * ### Extract Data
+      * ###
+      * ######################################## 
+      */
+     function extractTableContent(configContainer, $container, dataContainer) {
+         // init vars
+         var data = new Array();
+         dataContainer.data = data;
+
+         // find contentlines for $container
+         var contentLines = $container.find(".content_line");
+         console.log("contentlines:" + contentLines.length + " contentLines:"
+                 + contentLines);
+
+         // iterate lines from $container
+         $.each(contentLines, function(index, contentLine) {
+             console.log("contentline:" + index + " line:" + $(contentLine));
+             extractLineContent(configContainer, $(contentLine), dataContainer);
+         });
+
+         // return data-list
+         return dataContainer.data;
+     }
+
+     function extractLineContent(configContainer, $contentline, dataContainer) {
+         // init vars
+         var dataObj = {};
+
+         // init vars
+         var lstConfigBlocks = configContainer.configBlocks;
+
+         // iterate datablocks
+         for ( var blockName in lstConfigBlocks) {
+             // find contentblock for $contentline
+             var contentBlocks = $contentline.find(".content_block_" + blockName);
+
+             // iterate blocks from $contentline
+             $.each(contentBlocks, function(index, contentBlock) {
+                 console.log("block: " + blockName + " contentblock:" + index
+                         + " block:" + $(contentBlock));
+                 extractBlockContent(configContainer, $(contentBlock),
+                         blockName, dataObj);
+             });
+
+         }
+
+         // add data to dataContainer
+         dataContainer.data.push(dataObj);
+
+         // return data-obj
+         return dataObj;
+     }
+
+     function extractBlockContent(configContainer, $contentblock, blockName, data) {
+         // init vars
+         var lstConfigFields = configContainer.configBlocks[blockName];
+
+         // iterate fields
+         for ( var index = 0; index < lstConfigFields.length; ++index) {
+             // get fieldConfig
+             var fieldConfig = lstConfigFields[index];
+             extractFieldContent(configContainer, $contentblock, fieldConfig,
+                     data);
+         }
+
+         // return data-obj
+         return data;
+     }
+
+     function extractFieldContent(configContainer, $contentblock, fieldConfig, data) {
+         // init vars
+         var fieldName = fieldConfig["name"];
+         var funcRef = fieldConfig["getter"];
+
+         // find field
+         var contentFields = $contentblock.find(".content_column_" + fieldName);
+
+         // iterate blocks from $contentline
+         $.each(contentFields,
+             function(index, contentField) {
+                 console.log("fieldName: " + fieldName + " contentfield:"
+                         + index + " field:" + $(contentField));
+     
+                 // get content (input or data)
+                 if (funcRef != null) {
+                     content = funcRef(configContainer, $(contentField),
+                             fieldConfig, data);
+                 } else {
+                     data[fieldName] = $(contentField).html();
+                 }
+                 console.log("fieldName: " + fieldName + " data:"
+                         + data[fieldName]);
+             }
+         );
+
+         // return data-obj
+         return data;
+     }
+
+     function downloadAsJSON($link, data, fileName) {
+         // data
+         var json = JSON.stringify(data);
+         
+         // update link
+         downloadAsFile($link, json, fileName, "application/json", "utf-8");
+     }
+
+     function downloadAsBatchFile($link, data, fileName) {
+         // data
+         var bat = "";
+
+         // template java -Xmx512m -Xms128m -Dfile.encoding=ISO8859_1  -cp  %CP% org.plontke.webapp.mediadb.jobs.ImportImages %CONF% "Besichtigung des Kuhstall 24.03.2008" "24.03.2008 13:30:00" "24.03.2008 14:30:59" "OFFEN,Ausflug,Micha,Kuhstall,,KW_Winter,KW_heiter,KW_Schnee,KW_Sonne,KW_sonnig,KW_Kurztour,KW_Wanderung,KW_Wandern,KW_Naturlandschaft,KW_Bergwald,KW_Wald,KW_Berge,KW_Felsen,KW_Felswand,KW_Mittelgebirge,KW_Schlucht,KW_Tal" "D:\Bilder\digifotos\import-2008-03\20080324-kuhstall" "Kuhstall"
+         for ( var index = 0; index < data.length; ++index) {
+             var dataObj = data[index];
+             bat += "java -Xmx512m -Xms128m -Dfile.encoding=ISO8859_1  -cp  %CP% org.plontke.webapp.mediadb.jobs.ImportImages %CONF% "
+                 + " \"" + dataObj["Name"] + "\""
+                 + " \"" + dataObj["MyStartDate"] + "\""
+                 + " \"" + dataObj["MyEndDate"] + "\""
+                 + " \"" + dataObj["Keywords"] + "\""
+                 + " \"" + dataObj["Path"].replace(/\//g, "\\") + "\"" 
+                 + " \"" + dataObj["MyOrt"] + "\"" + "\n";
+         }
+
+         // update link
+         downloadAsFile($link, bat, fileName, "application/text", "utf-8");
+     }
+
+     
+     /* 
+      * ########################################
+      * ###
+      * ### Keyword Editor 
+      * ###
+      * ######################################## 
+      */
+  
+     function initKeywordsEditor(config, $container) {
+         // init config
+         var configKeywordBlocks = config.configKeywords;
+
+         // iterate blocks
+         for (var blockName in configKeywordBlocks) {
+             // get config
+             var configKeywords = configKeywordBlocks[blockName];
+              
+             // configure line
+             var line = "<div class='rowStart_container'>"
+                      + "<label class='label_container'>" + blockName + "</label>"
+                      + "<div class='textShow_container'>";
+              
+             // iterate keywords
+             for (var index = 0; index < configKeywords.length; ++index) {
+                 var keyword = configKeywords[index];
+                 line += "<a class='a-addkeyword a-addkeyword-KW_" + keyword + "'"
+                      + " href='#' id='a_addkeyword_KW_" + keyword + "'>"+ keyword + "</a> ";
+             }
+              
+             // end line
+             line += "</div></div>";
+
+             // append to container
+             $container.append(line);
+         }
+     }
+
+     function openKeywordEditor($keywordsDiv, srcElementId, requiredElementId, suggestedElementId) {
+         var srcKeywords = $("#" + srcElementId);
+         var requiredKeywords = $("#" + requiredElementId);
+         var suggestedKeywords = $("#" + suggestedElementId);
+         
+         // reset color of all keyword-links
+         $("#" + $keywordsDiv.attr('id') + " a").filter(".a-addkeyword").css("color", "blue");
+
+         // check all keyword-links
+         $.each($("#" + $keywordsDiv.attr('id') + " a").filter(".a-addkeyword"), 
+             function (index, kwLink) {
+                 // extract keyword-text
+                 var keyword = $(kwLink).text();
+     
+                 // change onclick of link to current srcKeywords
+                 kwLink.onclick = function(event, link) {
+                     addKeywordText(srcElementId, ',KW_' + keyword);
+                     $(kwLink).css("color", "green");
+                     return false;
+                 };
+
+                 // change color if keyword exists in requiredKeywords
+                 if (requiredKeywords) {
+                     jMATService.getPageLayoutService().getJMSServiceObj().doActionIfNeedlesFound(
+                         $(requiredKeywords).val(), ['KW_' + keyword],
+                         function() {
+                             $(kwLink).css("color", "red");
+                         }
+                     );
+                 }
+                 // change color if keyword exists in suggestedKeywords
+                 if (suggestedKeywords) {
+                     jMATService.getPageLayoutService().getJMSServiceObj().doActionIfNeedlesFound(
+                         $(suggestedKeywords).val(), ['KW_' + keyword],
+                         function() {
+                             $(kwLink).css("color", "red");
+                         }
+                     );
+                 }
+                 // change color if keyword exists in srcKeywords
+                 if (srcKeywords) {
+                     jMATService.getPageLayoutService().getJMSServiceObj().doActionIfNeedlesFound(
+                         $(srcKeywords).val(), ['KW_' + keyword],
+                         function() {
+                             $(kwLink).css("color", "green");
+                         }
+                     );
+                 }
+             }
+         );
+     }
+     
+     /* 
+      * ########################################
+      * ###
+      * ### App + Config
+      * ###
+      * ######################################## 
+      */
+     function runApp(configContainer, dataContainer) {
+         // clear container
+         var $container = $("#container");
+         $container.empty();
+
+         // gen Table
+         genTableHead(configContainer, $container);
+         genTableContent(configContainer, $container, dataContainer);
+
+         // activate exportLinks
+         $(".exportLink").css("display", "inline");
+         document.getElementById("exportJSONLink").onclick = function(event, link) {
+                 extractTableContent(configContainer, $container, dataContainer);
+                 downloadAsJSON($(this), dataContainer.data, 'data.json');
+             }
+         ;
+         document.getElementById("exportBatchLink").onclick = function(event, link) {
+                 extractTableContent(configContainer, $container, dataContainer);
+                 downloadAsBatchFile($(this), dataContainer.data, 'data.bat');
+             }
+         ;
+         
+         // init keywordseditor
+         initKeywordsEditor(configContainer, $("#divKeywordsEditor"));
+     }
+
+     function loadConfig(configContainer) {
+         // init Config
+         initConfigBlocks(configContainer);
+         initConfigRates(configContainer);
+         initConfigKeywords(configContainer);
+
+         // initFileUploader
+         var fileDialog = document.getElementById('importJSONFile');
+         fileDialog.addEventListener('change', handleImportJSONFileSelect, false);
+     }
+
+     function initConfigBlocks(configContainer) {
+         // set data
+         var lstConfigBlocks = {};
+         lstConfigBlocks["base"] = new Array();
+         lstConfigBlocks["base"].push({ name : "Path"});
+
+         lstConfigBlocks["orig"] = new Array();
+         lstConfigBlocks["orig"].push({ name : "Ort"});
+         lstConfigBlocks["orig"].push({ name : "StartDate"});
+         lstConfigBlocks["orig"].push({ name : "EndDate"});
+
+         lstConfigBlocks["my"] = new Array();
+         lstConfigBlocks["my"].push({ name : "Type", editor : appendInputSelectRate, getter : getInputSelectRate, required: true});
+         lstConfigBlocks["my"].push({ name : "Praefix", editor : appendInputText, getter : getInputText});
+
+         lstConfigBlocks["my2"] = new Array();
+         lstConfigBlocks["my2"].push({ name : "MyOrt", editor : appendInputText, getter : getInputText, required: true});
+         lstConfigBlocks["my2"].push({ name : "MyStartDate", editor : appendInputDate, getter : getInputText, required: true});
+         lstConfigBlocks["my2"].push({ name : "MyEndDate", editor : appendInputDate, getter : getInputText, required: true});
+
+         lstConfigBlocks["data2"] = new Array();
+         lstConfigBlocks["data2"].push({ name : "Personen", editor : appendInputText, getter : getInputText});
+         lstConfigBlocks["data2"].push({ name : "Keywords", editor : appendInputText4Keywords, getter : getInputTextArea, required: true});
+
+         lstConfigBlocks["data"] = new Array();
+         lstConfigBlocks["data"].push({ name : "Name", editor : appendInputText4Name, getter : getInputText, required: true});
+
+         lstConfigBlocks["rate"] = new Array();
+         lstConfigBlocks["rate"].push({ name : "GESAMT", editor : appendInputSelectRate, getter : getInputSelectRate});
+         lstConfigBlocks["rate"].push({ name : "WICHTIGKEIT", editor : appendInputSelectRate, getter : getInputSelectRate});
+         lstConfigBlocks["rate"].push({ name : "MOTIVE", editor : appendInputSelectRate, getter : getInputSelectRate});
+         lstConfigBlocks["rate"].push({ name : "BILDUNG", editor : appendInputSelectRate, getter : getInputSelectRate});
+         lstConfigBlocks["rate"].push({ name : "SCHWIERIGKEIT", editor : appendInputSelectRate, getter : getInputSelectRate});
+         lstConfigBlocks["rate"].push({ name : "AUSDAUER", editor : appendInputSelectRate, getter : getInputSelectRate});
+         lstConfigBlocks["rate"].push({ name : "KRAFT", editor : appendInputSelectRate, getter : getInputSelectRate});
+         lstConfigBlocks["rate"].push({ name : "MENTAL", editor : appendInputSelectRate, getter : getInputSelectRate});
+
+         // set config
+         configContainer.configBlocks = lstConfigBlocks;
+         configContainer.flgConfigBlocksLoaded = true;
+     }
+
+     function initConfigKeywords(configContainer) {
+         // set data
+         var lstConfigKeywords = {};
+         lstConfigKeywords['Wald'] = new Array('Bergwald', 'Laubwald', 'Nadelwald', 'Strandwald', 'Wald');
+         lstConfigKeywords['Gebirge'] = new Array('Berge', 'Felsen', 'Felswand', 'Firn', 'Gletscherschau', 'Hochebene', 'Hochgebirge', 'Höhle', 'Mittelgebirge', 'Schlucht', 'Schneefelder', 'Tal');
+         lstConfigKeywords['Meer'] = new Array('Meer', 'Ozean', 'Sandstrand', 'Steinstrand', 'Steilküste');
+         lstConfigKeywords['Gewässer'] = new Array('Aue', 'Bach, Fluss', 'Moor', 'See', 'Seenlandschaft', 'Teich', 'Wasserfall');
+         lstConfigKeywords['Wiese'] = new Array('Alm', 'Blumen', 'Feld', 'Heide', 'Kakteen', 'Steppe', 'Weide', 'Wiese', 'Wüste');
+         lstConfigKeywords['Stadt'] = new Array('Architektur', 'Basar', 'Burg', 'Denkmal', 'Dom', 'Geschichte', 'Kirche', 'Kunst', 'Moschee', 'Museum', 'Park', 'Ruinen', 'Schloss', 'Tempel', 'Zoo');
+         lstConfigKeywords['Stadt/Land'] = new Array('Kulturlandschaft', 'Landschaft', 'Natur', 'Dorf', 'Stadt', 'Naturlandschaft');
+         lstConfigKeywords['Aktivität'] = new Array('Baden', 'Boofen', 'Bootfahren', 'Campen', 'Fliegen', 'Gletscherbegehung', 'Kanu', 'Klettern', 'Klettersteig', 'Museumsbesuch', 'Stadtbesichtigung', 'Radfahren', 'Schneeschuhwandern', 'Skaten', 'Wandern');
+         lstConfigKeywords['Tour'] = new Array('Besichtigung', 'Gassi', 'Hochtour', 'Spaziergang', 'Wanderung');
+         lstConfigKeywords['Dauer'] = new Array('Kurztour', 'Mehrtagestour', 'Tagestour');
+         lstConfigKeywords['Wetter'] = new Array('bedeckt', 'Eis', 'heiter', 'Regen', 'Schnee', 'Sonne', 'sonnig');
+         lstConfigKeywords['Jahreszeit'] = new Array('Frühling', 'Herbst', 'Sommer', 'Winter');
+         lstConfigKeywords['Zeugs'] = new Array('Mond', 'Sonnenaufgang', 'Sonnenuntergang');
+         lstConfigKeywords['Dinge'] = new Array('Menschen', 'Technik', 'Tiere');
+         
+         // set config
+         configContainer.configKeywords = lstConfigKeywords;
+         configContainer.flgConfigKeywordsLoaded = true;
+     }
+
+     function initConfigRates(configContainer) {
+         // set data
+         var lstConfigRates = {};
+         lstConfigRates['I_RATE'] = new Array();
+         lstConfigRates['I_RATE'].push({ id: 70, fieldname: 'I_RATE', value: 0, shortName: '_____', longName: 'nicht eingeschätzt'});
+         lstConfigRates['I_RATE'].push({ id: 71, fieldname: 'I_RATE', value: 2, shortName: '*____', longName: 'Playlist (autom)'});
+         lstConfigRates['I_RATE'].push({ id: 72, fieldname: 'I_RATE', value: 5, shortName: '**___', longName: 'Favorit (autom)'});
+         lstConfigRates['I_RATE'].push({ id: 73, fieldname: 'I_RATE', value: 8, shortName: '***__', longName: 'Kat-Favorit (autom)'});
+         lstConfigRates['I_RATE'].push({ id: 74, fieldname: 'I_RATE', value: 11, shortName: '****_', longName: 'phantastisch (manuell)'});
+         lstConfigRates['I_RATE'].push({ id: 75, fieldname: 'I_RATE', value: 14, shortName: '*****', longName: 'Meilenstein (manuell)'});
+         lstConfigRates['I_RATE'].push({ id: 76, fieldname: 'I_RATE', value: 9, shortName: '**+__', longName: 'Kalender-Auswahl (autom)'});
+         lstConfigRates['I_RATE'].push({ id: 77, fieldname: 'I_RATE', value: 10, shortName: '**+__', longName: 'Kalender-Favorites (autom)'});
+         lstConfigRates['I_RATE'].push({ id: 78, fieldname: 'I_RATE', value: 6, shortName: '*+___', longName: 'Favorit+ (autom)'});
+         lstConfigRates['AUSDAUER'] = new Array();
+         lstConfigRates['AUSDAUER'].push({ id: 7, fieldname: 'K_RATE_AUSDAUER', value: 0, shortName: '_____', longName: 'nicht eingeschätzt'});
+         lstConfigRates['AUSDAUER'].push({ id: 8, fieldname: 'K_RATE_AUSDAUER', value: 2, shortName: '*____', longName: 'problemlos'});
+         lstConfigRates['AUSDAUER'].push({ id: 9, fieldname: 'K_RATE_AUSDAUER', value: 5, shortName: '**___', longName: 'kurz'});
+         lstConfigRates['AUSDAUER'].push({ id: 10, fieldname: 'K_RATE_AUSDAUER', value: 8, shortName: '***__', longName: 'mittel'});
+         lstConfigRates['AUSDAUER'].push({ id: 11, fieldname: 'K_RATE_AUSDAUER', value: 11, shortName: '****_', longName: 'anspruchsvoll'});
+         lstConfigRates['AUSDAUER'].push({ id: 12, fieldname: 'K_RATE_AUSDAUER', value: 14, shortName: '*****', longName: 'sehr lang'});
+         lstConfigRates['BILDUNG'] = new Array();
+         lstConfigRates['BILDUNG'].push({ id: 25, fieldname: 'K_RATE_BILDUNG', value: 0, shortName: '_____', longName: 'nicht eingeschätzt'});
+         lstConfigRates['BILDUNG'].push({ id: 26, fieldname: 'K_RATE_BILDUNG', value: 2, shortName: '*____', longName: 'keine'});
+         lstConfigRates['BILDUNG'].push({ id: 27, fieldname: 'K_RATE_BILDUNG', value: 8, shortName: '***__', longName: 'informativ'});
+         lstConfigRates['BILDUNG'].push({ id: 28, fieldname: 'K_RATE_BILDUNG', value: 11, shortName: '****_', longName: 'bildend'});
+         lstConfigRates['GESAMT'] = new Array();
+         lstConfigRates['GESAMT'].push({ id: 41, fieldname: 'K_RATE_GESAMT', value: 0, shortName: '_____', longName: 'nicht eingeschätzt'});
+         lstConfigRates['GESAMT'].push({ id: 42, fieldname: 'K_RATE_GESAMT', value: 2, shortName: '*____', longName: 'nicht so schön'});
+         lstConfigRates['GESAMT'].push({ id: 43, fieldname: 'K_RATE_GESAMT', value: 5, shortName: '**___', longName: 'ansehen, wenn Langeweile'});
+         lstConfigRates['GESAMT'].push({ id: 44, fieldname: 'K_RATE_GESAMT', value: 8, shortName: '***__', longName: 'empfehlenswert'});
+         lstConfigRates['GESAMT'].push({ id: 45, fieldname: 'K_RATE_GESAMT', value: 11, shortName: '****_', longName: 'muß man gesehen haben'});
+         lstConfigRates['GESAMT'].push({ id: 46, fieldname: 'K_RATE_GESAMT', value: 14, shortName: '*****', longName: 'phantastischer Meilenstein'});
+         lstConfigRates['KRAFT'] = new Array();
+         lstConfigRates['KRAFT'].push({ id: 13, fieldname: 'K_RATE_KRAFT', value: 0, shortName: '_____', longName: 'nicht eingeschätzt'});
+         lstConfigRates['KRAFT'].push({ id: 14, fieldname: 'K_RATE_KRAFT', value: 2, shortName: '*____', longName: 'schafft jeder'});
+         lstConfigRates['KRAFT'].push({ id: 15, fieldname: 'K_RATE_KRAFT', value: 5, shortName: '**___', longName: 'leicht'});
+         lstConfigRates['KRAFT'].push({ id: 16, fieldname: 'K_RATE_KRAFT', value: 8, shortName: '***__', longName: 'mittel'});
+         lstConfigRates['KRAFT'].push({ id: 17, fieldname: 'K_RATE_KRAFT', value: 11, shortName: '****_', longName: 'schwer'});
+         lstConfigRates['KRAFT'].push({ id: 18, fieldname: 'K_RATE_KRAFT', value: 14, shortName: '*****', longName: 'sehr schwer'});
+         lstConfigRates['MENTAL'] = new Array();
+         lstConfigRates['MENTAL'].push({ id: 19, fieldname: 'K_RATE_MENTAL', value: 0, shortName: '_____', longName: 'nicht eingeschätzt'});
+         lstConfigRates['MENTAL'].push({ id: 20, fieldname: 'K_RATE_MENTAL', value: 2, shortName: '*____', longName: 'schafft jeder'});
+         lstConfigRates['MENTAL'].push({ id: 21, fieldname: 'K_RATE_MENTAL', value: 5, shortName: '**___', longName: 'problemlos'});
+         lstConfigRates['MENTAL'].push({ id: 22, fieldname: 'K_RATE_MENTAL', value: 8, shortName: '***__', longName: 'kostet Überwindung'});
+         lstConfigRates['MENTAL'].push({ id: 23, fieldname: 'K_RATE_MENTAL', value: 11, shortName: '****_', longName: 'gefährlich'});
+         lstConfigRates['MENTAL'].push({ id: 24, fieldname: 'K_RATE_MENTAL', value: 14, shortName: '*****', longName: 'zittrig'});
+         lstConfigRates['MOTIVE'] = new Array();
+         lstConfigRates['MOTIVE'].push({ id: 29, fieldname: 'K_RATE_MOTIVE', value: 0, shortName: '_____', longName: 'nicht eingeschätzt'});
+         lstConfigRates['MOTIVE'].push({ id: 30, fieldname: 'K_RATE_MOTIVE', value: 2, shortName: '*____', longName: 'nichts anzusehen'});
+         lstConfigRates['MOTIVE'].push({ id: 31, fieldname: 'K_RATE_MOTIVE', value: 5, shortName: '**___', longName: 'nichts Besonderes'});
+         lstConfigRates['MOTIVE'].push({ id: 32, fieldname: 'K_RATE_MOTIVE', value: 8, shortName: '***__', longName: 'einzelne schöne Motive'});
+         lstConfigRates['MOTIVE'].push({ id: 33, fieldname: 'K_RATE_MOTIVE', value: 11, shortName: '****_', longName: 'sehr schöne Motive'});
+         lstConfigRates['MOTIVE'].push({ id: 34, fieldname: 'K_RATE_MOTIVE', value: 14, shortName: '*****', longName: 'phantastische Motive'});
+         lstConfigRates['SCHWIERIGKEIT'] = new Array();
+         lstConfigRates['SCHWIERIGKEIT'].push({ id: 1, fieldname: 'K_RATE_SCHWIERIGKEIT', value: 0, shortName: '______', longName: 'nicht eingeschätzt'});
+         lstConfigRates['SCHWIERIGKEIT'].push({ id: 2, fieldname: 'K_RATE_SCHWIERIGKEIT', value: 2, shortName: '*____', longName: 'keine'});
+         lstConfigRates['SCHWIERIGKEIT'].push({ id: 3, fieldname: 'K_RATE_SCHWIERIGKEIT', value: 5, shortName: '**___', longName: 'ein Spaziergang'});
+         lstConfigRates['SCHWIERIGKEIT'].push({ id: 4, fieldname: 'K_RATE_SCHWIERIGKEIT', value: 8, shortName: '***__', longName: 'nicht für jedermann'});
+         lstConfigRates['SCHWIERIGKEIT'].push({ id: 5, fieldname: 'K_RATE_SCHWIERIGKEIT', value: 11, shortName: '****_', longName: 'Tour'});
+         lstConfigRates['SCHWIERIGKEIT'].push({ id: 6, fieldname: 'K_RATE_SCHWIERIGKEIT', value: 14, shortName: '*****', longName: 'Extrem'});
+         lstConfigRates['WICHTIGKEIT'] = new Array();
+         lstConfigRates['WICHTIGKEIT'].push({ id: 35, fieldname: 'K_RATE_WICHTIGKEIT', value: 0, shortName: '_____', longName: 'nicht eingeschätzt'});
+         lstConfigRates['WICHTIGKEIT'].push({ id: 36, fieldname: 'K_RATE_WICHTIGKEIT', value: 2, shortName: '*____', longName: 'nie wieder'});
+         lstConfigRates['WICHTIGKEIT'].push({ id: 37, fieldname: 'K_RATE_WICHTIGKEIT', value: 5, shortName: '**___', longName: 'unwichtig'});
+         lstConfigRates['WICHTIGKEIT'].push({ id: 38, fieldname: 'K_RATE_WICHTIGKEIT', value: 8, shortName: '***__', longName: 'fand ich OK'});
+         lstConfigRates['WICHTIGKEIT'].push({ id: 39, fieldname: 'K_RATE_WICHTIGKEIT', value: 11, shortName: '****_', longName: 'war mir wichtig'});
+         lstConfigRates['WICHTIGKEIT'].push({ id: 40, fieldname: 'K_RATE_WICHTIGKEIT', value: 14, shortName: '*****', longName: 'ein Meilenstein'});
+         lstConfigRates['TYPE'] = new Array();
+         lstConfigRates['TYPE'].push({ id: 66, fieldname: 'K_TYPE', value: 0, shortName: '?', longName: 'OFFEN'});
+         lstConfigRates['TYPE'].push({ id: 112, fieldname: 'K_TYPE', value: 106, shortName: 'Auto', longName: 'Autofahrt'});
+         lstConfigRates['TYPE'].push({ id: 51, fieldname: 'K_TYPE', value: 5, shortName: 'Ba', longName: 'Baden'});
+         lstConfigRates['TYPE'].push({ id: 113, fieldname: 'K_TYPE', value: 130, shortName: 'Biw', longName: 'Biwak'});
+         lstConfigRates['TYPE'].push({ id: 50, fieldname: 'K_TYPE', value: 4, shortName: 'Bo', longName: 'Boots-Tour'});
+         lstConfigRates['TYPE'].push({ id: 61, fieldname: 'K_TYPE', value: 122, shortName: 'BT', longName: 'Berg-Tour'});
+         lstConfigRates['TYPE'].push({ id: 60, fieldname: 'K_TYPE', value: 121, shortName: 'BW', longName: 'Berg-Wanderung'});
+         lstConfigRates['TYPE'].push({ id: 58, fieldname: 'K_TYPE', value: 111, shortName: 'Ga', longName: 'Gassi-Runde'});
+         lstConfigRates['TYPE'].push({ id: 65, fieldname: 'K_TYPE', value: 126, shortName: 'HT', longName: 'Hochtour'});
+         lstConfigRates['TYPE'].push({ id: 64, fieldname: 'K_TYPE', value: 125, shortName: 'KB', longName: 'kombinierte Berg-Tour'});
+         lstConfigRates['TYPE'].push({ id: 67, fieldname: 'K_TYPE', value: 127, shortName: 'KlAp', longName: 'Alpinklettern'});
+         lstConfigRates['TYPE'].push({ id: 68, fieldname: 'K_TYPE', value: 128, shortName: 'KlSa', longName: 'Sachsenklettern'});
+         lstConfigRates['TYPE'].push({ id: 69, fieldname: 'K_TYPE', value: 129, shortName: 'KlSp', longName: 'Sportklettern'});
+         lstConfigRates['TYPE'].push({ id: 49, fieldname: 'K_TYPE', value: 3, shortName: 'KlT', longName: 'Kletter-Tour'});
+         lstConfigRates['TYPE'].push({ id: 62, fieldname: 'K_TYPE', value: 123, shortName: 'KS', longName: 'Klettersteig-Tour'});
+         lstConfigRates['TYPE'].push({ id: 54, fieldname: 'K_TYPE', value: 103, shortName: 'Mu', longName: 'Museumsbesichtigung'});
+         lstConfigRates['TYPE'].push({ id: 56, fieldname: 'K_TYPE', value: 105, shortName: 'PB', longName: 'Park-Besuch'});
+         lstConfigRates['TYPE'].push({ id: 47, fieldname: 'K_TYPE', value: 1, shortName: 'RT', longName: 'Rad-Tour'});
+         lstConfigRates['TYPE'].push({ id: 63, fieldname: 'K_TYPE', value: 124, shortName: 'ScT', longName: 'Schneeschuh-Tour'});
+         lstConfigRates['TYPE'].push({ id: 48, fieldname: 'K_TYPE', value: 2, shortName: 'SkT', longName: 'Skating-Tour'});
+         lstConfigRates['TYPE'].push({ id: 57, fieldname: 'K_TYPE', value: 110, shortName: 'Spa', longName: 'Spaziergang'});
+         lstConfigRates['TYPE'].push({ id: 52, fieldname: 'K_TYPE', value: 101, shortName: 'StBe', longName: 'Stadtbesichtigung'});
+         lstConfigRates['TYPE'].push({ id: 53, fieldname: 'K_TYPE', value: 102, shortName: 'StBu', longName: 'Stadtbummel'});
+         lstConfigRates['TYPE'].push({ id: 114, fieldname: 'K_TYPE', value: 131, shortName: 'Unt', longName: 'Unterkunft'});
+         lstConfigRates['TYPE'].push({ id: 59, fieldname: 'K_TYPE', value: 120, shortName: 'W', longName: 'Wanderung'});
+         lstConfigRates['TYPE'].push({ id: 55, fieldname: 'K_TYPE', value: 104, shortName: 'Z', longName: 'Zoo-Besuch'});
+
+         // set config
+         configContainer.configRates = lstConfigRates;
+         configContainer.flgConfigRatesLoaded = true;
+     }
+
+     function loadExampleData(dataContainer) {
+         var lstData = dataContainer.data;
+         lstData.push({
+                     Path : 'D:/Bilder/digifotos/import-2013-01/20130428-berkenbrueck',
+                     Ort : 'Berkenbrueck',
+                     StartDate : '28.04.2013 12:12:43',
+                     EndDate : '28.04.2013 15:08:42',
+                     Name : 'Rundwanderung mit Harry im Fläming über die Felder von Berkenbrueck nach Gottsdorf 28.04.2013',
+                     Personen : 'Harry',
+                     Keywords : ',KW_Wald,KW_Teich,KW_See,KW_Bach,KW_Moor,KW_Feld,KW_Wiese,KW_Weide,KW_Kulturlandschaft,KW_Landschaft,KW_Natur,KW_Naturlandschaft,KW_Wandern,KW_Wanderung,KW_Kurztour,KW_heiter,KW_Sonne,KW_sonnig,KW_Frühling',
+                     MyOrt : 'Berkenbrueck',
+                     MyStartDate : '28.04.2013 12:12:43',
+                     MyEndDate : '28.04.2013 15:08:42'
+                 });
+         lstData.push({
+                     Path : 'D:/Bilder/digifotos/import-2013-01/20130428-mittenwalde',
+                     Ort : 'Mittenwalde',
+                     StartDate : '28.04.2013 19:22:41',
+                     EndDate : '28.04.2013 20:17:41',
+                     Name : 'Gassi-Runde mit Harry,Verena über die Felder bei Mittenwalde 28.04.2013',
+                     Personen : 'Harry,Verena',
+                     Keywords : ',KW_Bach,KW_Feld,KW_Blumen,KW_Wiese,KW_Kulturlandschaft,KW_Landschaft,KW_Natur,KW_Spaziergang,KW_Gassi,KW_Kurztour,KW_heiter,KW_Sonne,KW_sonnig,KW_Frühling,KW_Sonnenuntergang',
+                     MyOrt : 'Mittenwalde',
+                     MyStartDate : '28.04.2013 19:22:41',
+                     MyEndDate : '28.04.2013 20:17:41'
+                 });
+
+         dataContainer.flgDataLoaded = true;
+     }
+     
+</script>
+
+<style>
+/*
+########################
+##
+## Base
+##
+########################
+*/
+body {
+    font-family: Verdana,Arial,Helvetica,sans-serif;
+    font-size: 11px;
+    text-align: left;
+}
+.optionfavorite {
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.optionactive {
+    font-size: 14px;
+    font-weight: bold;
+}
+.optionnorm {
+    font-size: 10px;
+    font-weight: normal;
+}
+
+input:active, input:focus, select:active, select:focus, textarea:active, textarea:focus {
+    font-size: 14px;
+    background-color: #FCC546;
+}
+textarea, input, select {
+    font-size: 11px;
+    border: 1px solid #8CACD3;
+    background-color: #EBF3FA;
+    border-radius: 4px;
+    margin-bottom: 2px;
+}
+
+
+label {
+    display:block; 
+}
+/** insert * behind label with required **/
+label.required:after {
+  content: '*';
+  color: red;
+}
+
+/** highlight empty input with required **/
+input.required:invalid , textarea.required:invalid, select.required:invalid {
+  background: #F96502;
+}
+
+/**
+  App-Config
+**/
+#tools {
+    background-color: #8CACD3;
+    border: 2px solid black;
+    float: left;
+    width: 100%;
+    position: fixed;
+    z-index: 21;
+}
+#toolsDummy{
+    height: 40px;
+}
+
+.exportLink {
+    display: none;
+}
+
+.container {
+}
+
+/** Head **/
+.head_line {
+    display: none;
+    background-color: #8CACD3;
+    border: 2px solid black;
+    float: left;
+    width: 500px;
+    position: fixed;
+    z-index: 21;
+}
+.head_block {
+    border: 1px thin black;
+    float: left;
+}
+.head_column {
+    border: 1px dotted blue;
+    float: left;
+}
+.label_head_column {
+    display: none;
+}
+.headLineDummy{
+    display: none;
+    height: 160px;
+}
+
+/** Content **/
+.content_line {
+    border: 2px solid black;
+    float: left;
+    width: 500px;
+    margin-top: 10px;
+}
+.content_block {
+    border: 1px thin black;
+    float: left;
+}
+.content_column {
+    border: 1px dotted blue;
+    float: left;
+}
+
+
+/** Block: Base **/
+.block_base {
+    clear: both;
+    width: 500px;
+}
+.column_Path {
+    width: 490px;
+    font-weight: bold;
+}
+
+/** Block: Orig **/
+.block_orig {
+    clear: both;
+    width: 500px;
+}
+.column_StartDate {
+    width: 140px;
+}
+.column_EndDate {
+    width: 140px;
+}
+.column_Ort {
+    width: 200px;
+}
+
+/** Block: My **/
+.block_my {
+    clear: both;
+    width: 500px;
+}
+.column_Type {
+    width: 200px;
+}
+.column_Praefix {
+    width: 200px;
+}
+.input_Praefix {
+    width: 190px;
+}
+
+/** Block: My2 **/
+.block_my2 {
+    clear: both;
+    width: 500px;
+}
+.column_MyOrt {
+    width: 200px;
+}
+.input_MyOrt {
+    width: 190px;
+}
+.column_MyStartDate {
+    width: 140px;
+}
+.input_MyStartDate {
+    width: 130px;
+}
+.column_MyEndDate {
+    width: 140px;
+}
+.input_MyEndDate {
+    width: 130px;
+}
+
+/** Block: Data **/
+.block_data {
+    clear: both;
+    width: 500px;
+}
+.column_Name {
+    width: 450px;
+}
+.input_Name {
+    width: 400px;
+    background: #83F792;
+}
+/** Block: Data2 **/
+.block_data2 {
+    clear: both;
+    width: 500px;
+}
+.column_Personen {
+    width: 450px;
+}
+.input_Personen {
+    width: 440px;
+}
+.column_Keywords {
+    width: 450px;
+}
+.input_textarea_Keywords {
+    width: 400px;
+    height: 60px;
+}
+
+/** Block: Rate **/
+.block_rate {
+    clear: both;
+    width: 500px;
+}
+.column_SCHWIERIGKEIT {
+    width: 240px;
+}
+.column_AUSDAUER {
+    width: 240px;
+}
+.column_KRAFT {
+    width: 240px;
+}
+.column_MENTAL {
+    width: 240px;
+}
+.column_GESAMT {
+    clear: both;
+    width: 240px;
+}
+.column_WICHTIGKEIT {
+    width: 240px;
+}
+.column_MOTIVE {
+    width: 240px;
+}
+.column_BILDUNG {
+    width: 240px;
+}
+
+
+
+/** Keywords-Editor **/
+.rowStart_container {
+    clear: both;
+    float: left;
+    margin: 0;
+    padding-top: 6px;
+    width: 100%;
+}
+.label_container {
+    border: 0 solid #FF0000;
+    float: left;
+    width: 70px;
+}
+.textShow_container {
+    float: left;
+    width: 350px;
+}
+#divKeywordsEditor {
+   display: none;
+   width: 500px;
+   position: fixed;
+   z-index: 25;
+   background: white;
+}
+
+</style>
+</head>
+<body>
+
+
+
+<div id="tools">
+  <input type="file" id="importJSONFile" name="importJSONFile" value="Import JSON" />
+  <a href="#" id="exportJSONLink" class="exportLink">Export as JSON</a> 
+  <a href="#" id="exportBatchLink" class="exportLink">Export as Batch</a>
+</div>
+<div id="toolsDummy"> </div>
+
+
+<div class="container" id="container">
+</div>
+
+<div id="divKeywordsEditor">
+<a href="#" onclick="javascript: $('#divKeywordsEditor').css('display', 'none'); return false; ">Schließen</a>
+</div>
+
+<script type="text/javascript">
+
+    // set global Vars
+    var dataContainer = {
+            flgDataLoaded: false,
+            data: new Array()
+    };
+    var configContainer = {
+            configRates: {},
+            flgConfigRatesLoaded: false,
+            configKeywords: {},
+            flgConfigKeywordsLoaded: false,
+            configBlocks: {},
+            flgConfigBlocksLoaded: false,
+    };
+    var dataUrl = "example_data.json";
+
+    // load
+    loadApp(configContainer, dataUrl, dataContainer);
+
+    function loadApp(configContainer, dataUrl, dataContainer) {
+        // start init when document ready
+        $( document ).ready(function() {
+            // init config and load data
+            loadConfig(configContainer);
+            loadDataFromServer(dataUrl, dataContainer)
+        });
+
+    }
+
+    function initApp() {
+        // wait for config and data loaded
+        checkAppDataLoaded = window.setInterval(
+            function() {
+                // check every second
+                if (   configContainer.flgConfigRatesLoaded
+                    && configContainer.flgConfigBlocksLoaded
+                    && configContainer.flgConfigKeywordsLoaded
+                    && dataContainer.flgDataLoaded) {
+
+                    // clear intervall
+                    window.clearInterval(checkAppDataLoaded);
+
+                    // run app
+                    runApp(configContainer, dataContainer);
+                }
+            },
+            1000
+        );
+    }
+
+</script>
+</body>
+</html>
