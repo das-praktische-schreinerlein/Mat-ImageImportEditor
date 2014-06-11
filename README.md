@@ -2,7 +2,7 @@ mat-imageimporteditor
 =====================
 
 # Desc
-This is a subset of managment-tools created for the imageimport on backend of www.michas-ausflugstipps.de.
+This is a subset of managment-tools created for the import of images on backend of www.michas-ausflugstipps.de.
 
 1. allinone html-editor to prepare import of image-dirs to mediadb (more infos on www.michas-ausflugstipps.de/portal-datenpflege.html)
 2. imagedir-import-generator to prepare json-files for the imageimport-editor
@@ -23,7 +23,7 @@ This is a subset of managment-tools created for the imageimport on backend of ww
 - for building
    - maven
    - IDE (I built it with eclipse)
-- for run
+- to use
    - java
    - browser with html5-support
 
