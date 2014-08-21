@@ -57,11 +57,22 @@
                  + encodeURIComponent(data);
 
          // set link
-         $link.attr({
-             'download' : fileName,
-             'href' : dataURI,
-             'target' : '_blank'
-         });
+         var flgSafeMode = 1;
+         if (   (navigator.userAgent.indexOf("Trident") >= 0) 
+             || (navigator.userAgent.indexOf("MSIE") >= 0)
+             || flgSafeMode) {
+            // IE or SafeMode
+            var popup = window.open();
+            $(popup.document.body).html("<pre>" + data + "</pre>");
+            return false;
+        } else {
+             // all expect IE
+             $link.attr({
+                 'download' : fileName,
+                 'href' : dataURI,
+                 'target' : '_blank'
+             });
+        }
      }
      
 
@@ -81,6 +92,26 @@
       * ######################################## 
       */
      
+     function appendShowText(config, $parent, configField, id, data, content) {
+         var name = configField["name"];
+         var required = configField["required"];
+         var labelName = ucFirstAllWords(name);
+         var $label = appendLabel4Element($parent, "labelinput_" + name + "_" + id,
+                 "label_input_text label_input_" + name,
+                 labelName, "input_" + name + "_" + id, required);
+
+         var classRequired = "";
+         if (required != "undefinded" && required) {
+             classRequired = " required ";
+         }
+         $parent.append("<input type='text' "
+                 + " id='input_" + name + "_" + id + "'"
+                 + " class='input_text input_" + name + classRequired + "'"
+                 + " value='" + content + "'" + classRequired
+                 + " size='100' readonly/>"
+                 );
+     }
+
      function appendInputText(config, $parent, configField, id, data, content) {
          var name = configField["name"];
          var required = configField["required"];
@@ -227,6 +258,13 @@
          $parent.append("<a href='#' onclick=\"javascript:recalcName('" + id + "'); return false;\">Recalc</a>");
      }
 
+     function appendInputText4Path(config, $parent, configField, id, data, content) {
+         // append show
+         appendShowText(config, $parent, configField, id, data, content);
+
+         // append url
+         $parent.append(" <a href='#' onclick=\"javascript:openFramePath('" + id + "'); return false;\">Show</a>");
+     }
 
      /* 
       * ########################################
@@ -450,6 +488,21 @@
          
          return newName;
      }
+     
+     function openFramePath(id) {
+         // field to setup
+         // field to setup
+         var $path = $("#input_Path_" + id);
+         var newPath = $path.val();
+         newPath = newPath.replace(/\\/g, "/");
+         newPath = "file:///" + newPath;
+         window.parent.setFramePath(newPath);
+    }
+
+    function setFramePath(path) {
+         // field to setup
+         document.getElementById('images').src=path;
+    }
 
      /* 
       * ########################################
@@ -460,7 +513,10 @@
       */
       function loadDataFromServer(url) {
          // load per JSon
+         console.log( "load:" + url);
          $.getJSON( url, function ( data ) {
+                 console.log( "done 1: " + url);
+
                  // init items
                  var items = new Array();
 
@@ -478,16 +534,17 @@
                  // initApp
                  initApp();
              }
-         ).done(function(msg) {
+         ).done(function(obj, msg) {
                  // second success
+                 console.log( "done 2: " + url);
              }
-         ).fail(function(msg) {
+         ).fail(function(jqxhr, textStatus, error) {
                  // error handling
-                 console.log( "error" + msg);
+                 console.log( "error: " + url + " msg:" + error);
              }
          ).always(function(msg) {
                  // full complete
-                 console.log( "complete" + msg);
+                 console.log( "complete: " + url + " msg:" + msg);
              }
          );
      }
@@ -796,7 +853,7 @@
          // set data
          var lstConfigBlocks = {};
          lstConfigBlocks["base"] = new Array();
-         lstConfigBlocks["base"].push({ name : "Path"});
+         lstConfigBlocks["base"].push({ name : "Path", editor : appendInputText4Path, getter : getInputText});
 
          lstConfigBlocks["orig"] = new Array();
          lstConfigBlocks["orig"].push({ name : "Ort"});
@@ -840,7 +897,7 @@
          lstConfigKeywords['Wald'] = new Array('Bergwald', 'Laubwald', 'Nadelwald', 'Strandwald', 'Wald');
          lstConfigKeywords['Gebirge'] = new Array('Berge', 'Felsen', 'Felswand', 'Firn', 'Gletscherschau', 'Hochebene', 'Hochgebirge', 'Höhle', 'Mittelgebirge', 'Schlucht', 'Schneefelder', 'Tal');
          lstConfigKeywords['Meer'] = new Array('Meer', 'Ozean', 'Sandstrand', 'Steinstrand', 'Steilküste');
-         lstConfigKeywords['Gewässer'] = new Array('Aue', 'Bach, Fluss', 'Moor', 'See', 'Seenlandschaft', 'Teich', 'Wasserfall');
+         lstConfigKeywords['Gewässer'] = new Array('Aue', 'Bach', 'Fluss', 'Moor', 'See', 'Seenlandschaft', 'Teich', 'Wasserfall');
          lstConfigKeywords['Wiese'] = new Array('Alm', 'Blumen', 'Feld', 'Heide', 'Kakteen', 'Steppe', 'Weide', 'Wiese', 'Wüste');
          lstConfigKeywords['Stadt'] = new Array('Architektur', 'Basar', 'Burg', 'Denkmal', 'Dom', 'Geschichte', 'Kirche', 'Kunst', 'Moschee', 'Museum', 'Park', 'Ruinen', 'Schloss', 'Tempel', 'Zoo');
          lstConfigKeywords['Stadt/Land'] = new Array('Kulturlandschaft', 'Landschaft', 'Natur', 'Dorf', 'Stadt', 'Naturlandschaft');
@@ -1046,6 +1103,10 @@ input.required:invalid , textarea.required:invalid, select.required:invalid {
 /**
   App-Config
 **/
+#app {
+    min-width:800px;
+}
+
 #tools {
     background-color: #8CACD3;
     border: 2px solid black;
@@ -1062,7 +1123,20 @@ input.required:invalid , textarea.required:invalid, select.required:invalid {
     display: none;
 }
 
-.container {
+#container {
+    float: left;
+    width: 500px;
+    height: 500px;
+    overflow-x:auto;
+    overflow-y:auto;
+}
+
+#images {
+    float: left;
+    width: 500px;
+    height: 500px;
+    overflow-x:auto;
+    overflow-y:auto;
 }
 
 /** Head **/
@@ -1115,6 +1189,10 @@ input.required:invalid , textarea.required:invalid, select.required:invalid {
 }
 .column_Path {
     width: 490px;
+    font-weight: bold;
+}
+.input_Path {
+    width: 400px;
     font-weight: bold;
 }
 
@@ -1265,24 +1343,31 @@ input.required:invalid , textarea.required:invalid, select.required:invalid {
 </head>
 <body>
 
+<div id="app">
+    <div id="tools">
+      <input type="file" id="importJSONFile" name="importJSONFile" value="Import JSON" />
+      <a href="#" id="exportJSONLink" class="exportLink">Export as JSON</a> 
+      <a href="#" id="exportBatchLink" class="exportLink">Export as Batch</a>
+    </div>
+    <div id="toolsDummy"> </div>
 
 
-<div id="tools">
-  <input type="file" id="importJSONFile" name="importJSONFile" value="Import JSON" />
-  <a href="#" id="exportJSONLink" class="exportLink">Export as JSON</a> 
-  <a href="#" id="exportBatchLink" class="exportLink">Export as Batch</a>
-</div>
-<div id="toolsDummy"> </div>
+    <div class="container" id="container">
+    </div>
 
-
-<div class="container" id="container">
-</div>
-
-<div id="divKeywordsEditor">
-<a href="#" onclick="javascript: $('#divKeywordsEditor').css('display', 'none'); return false; ">Schließen</a>
+    <div id="divKeywordsEditor">
+    <a href="#" onclick="javascript: $('#divKeywordsEditor').css('display', 'none'); return false; ">Schließen</a>
+    </div>
 </div>
 
 <script type="text/javascript">
+    /* 
+     * ########################################
+     * ###
+     * ### initApp
+     * ###
+     * ######################################## 
+     */
 
     // set global Vars
     var dataContainer = {
@@ -1298,10 +1383,6 @@ input.required:invalid , textarea.required:invalid, select.required:invalid {
             flgConfigBlocksLoaded: false,
     };
     var dataUrl = "example_data.json";
-
-    // load
-    loadApp(configContainer, dataUrl, dataContainer);
-
     function loadApp(configContainer, dataUrl, dataContainer) {
         // start init when document ready
         $( document ).ready(function() {
@@ -1333,6 +1414,72 @@ input.required:invalid , textarea.required:invalid, select.required:invalid {
         );
     }
 
+    function initFrameSetVersion() {
+        // check for frame
+        console.log("check for frame:" + window.name);
+        if (! window.parent || window.parent.name != "ImageImportEditorFrame") {
+            // I am the parent and create the frames
+            console.log("I am not the App-Frame:" + window.name);
+            window.name = "ImageImportEditorFrame";
+            $('body').html( "" );
+            document.open();
+            document.writeln("<!DOCTYPE html><html> <head> <script type='text/javascript'>function setFramePath(path) {document.getElementById('images').src=path;}" 
+                            + " <" + "/script> <" + "/head> <frameset cols='600px,*'>"
+                            + "<frame src='" + window.location + "' name='ImageImportEditor' id='ImageImportEditor'>"
+                            + "<frame src='' name='images' id='images'></frameset> </html>");
+            document.close();
+        } else {
+            // I am the App-Frame
+            console.log("I am the App-Frame:" + window.name);
+            window.name = "ImageImportEditor";
+            loadApp(configContainer, dataUrl, dataContainer);
+        }
+    }
+    
+    function initIFrameVersion() {
+        console.log("I am the App-Frame:" + window.name);
+        var height = window.innerHeight;
+        var width = "600px";
+        $( "<iframe name='images' id='images' class='images' src='' width='" + width + "'  height='" + height + "'>" ).insertAfter( "#container" );
+        $("#container").width("500px");
+        loadApp(configContainer, dataUrl, dataContainer);
+        setupAppSize();
+
+        // add resize event
+        $( window ).resize(function() {
+            setupAppSize();
+        });    
+    }
+    
+    function setupAppSize() {
+        var height = window.innerHeight;
+        var width = window.innerWidth;
+        
+        console.log("setup size width:" + window.innerWidth + " height:" + window.innerHeight);
+        
+        if (width > ($("#container").width() + 200)) {
+            $("#app").width(width);
+            console.log("setup new width:" + $("#images").width());
+            $("#images").width(width - $("#container").width() - 30);
+        }
+        if (height > 400) {
+            $("#app").height(height);
+            console.log("setup new height:" + $("#images").height());
+            $("#container").height(height - 30);
+            $("#images").height(height - 30);
+        }
+    }
+    
+    
 </script>
+
+<script>
+
+    console.log("start all:" + window.name);
+    $( document ).ready(function() {
+        initIFrameVersion();
+    });
+</script>
+
 </body>
 </html>
