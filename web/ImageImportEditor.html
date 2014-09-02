@@ -294,14 +294,14 @@
          // append input
          appendInputTextArea(config, $parent, configField, id, data, content);
          // append url
-         $parent.append("<a href='#' onclick=\"javascript:editKeywords('" + id + "'); return false;\">Edit</a>");
+         $parent.append("<a href='#' onclick=\"javascript:editKeywords('" + id + "'); return false;\" class='button'>Edit</a>");
      }
 
      function appendInputText4Name(config, $parent, configField, id, data, content) {
          // append input
          appendInputText(config, $parent, configField, id, data, content);
          // append url
-         $parent.append("<a href='#' onclick=\"javascript:recalcName('" + id + "'); return false;\">Recalc</a>");
+         $parent.append("<a href='#' onclick=\"javascript:recalcName('" + id + "'); return false;\" class='button'>Recalc</a>");
      }
 
      function appendInputText4Path(config, $parent, configField, id, data, content) {
@@ -309,21 +309,33 @@
          appendShowText(config, $parent, configField, id, data, content);
 
          // append url
-         $parent.append(" <a href='#' onclick=\"javascript:openImagePath('" + id + "'); return false;\">Bilder</a>");
+         $parent.append(" <a href='#' onclick=\"javascript:openImagePath('" + id + "'); return false;\" class='button'>Bilder</a>");
      }
+
+     function appendInputText4TrackFile(config, $parent, configField, id, data, content) {
+         // append show
+         appendInputText(config, $parent, configField, id, data, content, " wrap='off' ");
+
+         // append url
+         $parent.append("<span id='span_TrackFileUploader_" + id + "' class='span_TrackFileUploader'>Drag&Drop TrackUploader</span>");
+
+         // Setup the Trackfile-Listener
+         var dropZone = document.getElementById("input_TrackFile_" + id);
+         dropZone.addEventListener('dragover', handleTrackFileDragOver, false);
+         dropZone.addEventListener('drop', handleTrackFileSelect, false);
+         dropZone = document.getElementById("span_TrackFileUploader_" + id);
+         dropZone.addEventListener('dragover', handleTrackFileDragOver, false);
+         dropZone.addEventListener('drop', handleTrackFileSelect, false);     }
 
      function appendInputText4Track(config, $parent, configField, id, data, content) {
          // append show
          appendInputTextArea(config, $parent, configField, id, data, content, " wrap='off' ");
 
          // append url
-         $parent.append(" <a href='#' onclick=\"javascript:openTrackMap('" + id + "'); return false;\">Karte</a> <a href='#' onclick=\"javascript:syncTrackData('" + id + "'); return false;\">Sync</a>");
+         $parent.append(" <a href='#' onclick=\"javascript:openTrackMap('" + id + "'); return false;\" class='button'>Map</a><a href='#' onclick=\"javascript:syncTrackData('" + id + "'); return false;\" class='button'>Sync</a>");
 
          // Setup the Trackfile-Listener
          var dropZone = document.getElementById("input_Track_" + id);
-         dropZone.addEventListener('dragover', handleTrackFileDragOver, false);
-         dropZone.addEventListener('drop', handleTrackFileSelect, false);
-         dropZone = document.getElementById("input_TrackFile_" + id);
          dropZone.addEventListener('dragover', handleTrackFileDragOver, false);
          dropZone.addEventListener('drop', handleTrackFileSelect, false);
      }
@@ -339,7 +351,7 @@
          var my = "input_" + name + "_" + id;
 
          // append url
-         $parent.append(" <a href='#' onclick=\"javascript:$('#" + my + "').val($('#" + track + "').val()); return false;\">-&gt;My</a>");
+         $parent.append(" <a href='#' onclick=\"javascript:$('#" + my + "').val($('#" + track + "').val()); return false;\" class='button'>-&gt;My</a>");
      }
 
      
@@ -653,6 +665,7 @@
                     var id = eleId;
                     id = id.replace(/input_TrackFile_/g, "");
                     id = id.replace(/input_Track_/g, "");
+                    id = id.replace(/span_TrackFileUploader_/g, "");
                     
                     // format track
                     var track = e.target.result;
@@ -1073,7 +1086,7 @@
          lstConfigBlocks["rate"].push({ name : "MENTAL", editor : appendInputSelectRate, getter : getInputSelectRate});
 
          lstConfigBlocks["track"] = new Array();
-         lstConfigBlocks["track"].push({ name : "TrackFile", editor : appendInputText, getter : getInputTextArea, required: false});
+         lstConfigBlocks["track"].push({ name : "TrackFile", editor : appendInputText4TrackFile, getter : getInputTextArea, required: false});
          lstConfigBlocks["track"].push({ name : "Track", editor : appendInputText4Track, getter : getInputTextArea, required: false});
          lstConfigBlocks["track"].push({ name : "TrackTimeCorrector", editor : appendInputText, getter : getInputText, defaultvalue: "2"});
          lstConfigBlocks["track"].push({ name : "TrackStartDate", editor : appendInputText4DateSync, getter : getInputText});
@@ -1259,6 +1272,29 @@ body {
     font-size: 11px;
     text-align: left;
 }
+
+.button {
+    height: 25px;
+    text-decoration: none;
+/*    width: 150px; */
+    padding: 2px;
+    border: 2px solid white; /*#336699;*/
+    border-radius: 4px;
+    text-align: center;
+    color: white;
+    font-weight: bold;
+    background-color: #8CACD3;
+    background: #8cacd3; /* Old browsers */
+    background: -moz-linear-gradient(top, #8cacd3 0%, #2989d8 50%, #468ec9 51%, #7db9e8 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#8cacd3), color-stop(50%,#2989d8), color-stop(51%,#468ec9), color-stop(100%,#7db9e8)); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top, #8cacd3 0%,#2989d8 50%,#468ec9 51%,#7db9e8 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top, #8cacd3 0%,#2989d8 50%,#468ec9 51%,#7db9e8 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top, #8cacd3 0%,#2989d8 50%,#468ec9 51%,#7db9e8 100%); /* IE10+ */
+    background: linear-gradient(to bottom, #8cacd3 0%,#2989d8 50%,#468ec9 51%,#7db9e8 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#8cacd3', endColorstr='#7db9e8',GradientType=0 ); /* IE6-9 */
+}
+
+
 .optionfavorite {
     font-size: 12px;
     font-weight: bold;
@@ -1521,7 +1557,25 @@ input.required:invalid , textarea.required:invalid, select.required:invalid {
     width: 480px;
 }
 .input_TrackFile {
-    width: 400px;
+    width: 300px;
+}
+.span_TrackFileUploader {
+    width: 150px;
+    height: 45px;
+    padding: 2px;
+    border: 2px solid #8CACD3;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: bold;
+    color: #0645AD;
+    background: #fcf1b5; /* Old browsers */
+    background: -moz-radial-gradient(center, ellipse cover,  #fcf1b5 31%, #fefcea 87%); /* FF3.6+ */
+    background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(31%,#fcf1b5), color-stop(87%,#fefcea)); /* Chrome,Safari4+ */
+    background: -webkit-radial-gradient(center, ellipse cover,  #fcf1b5 31%,#fefcea 87%); /* Chrome10+,Safari5.1+ */
+    background: -o-radial-gradient(center, ellipse cover,  #fcf1b5 31%,#fefcea 87%); /* Opera 12+ */
+    background: -ms-radial-gradient(center, ellipse cover,  #fcf1b5 31%,#fefcea 87%); /* IE10+ */
+    background: radial-gradient(ellipse at center,  #fcf1b5 31%,#fefcea 87%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fcf1b5', endColorstr='#fefcea',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
 }
 .column_Track {
     width: 480px;
@@ -1657,6 +1711,8 @@ input.required:invalid , textarea.required:invalid, select.required:invalid {
    position: fixed;
    z-index: 25;
    background: white;
+   border: 2px solid #8cacd3;
+   padding: 4px;
 }
 
 /*
@@ -2057,8 +2113,8 @@ a.osm_search_content {
 <div id="app">
     <div id="tools">
       <input type="file" id="importJSONFile" name="importJSONFile" value="Import JSON" />
-      <a href="#" id="exportJSONLink" class="exportLink">Export as JSON</a> 
-      <a href="#" id="exportBatchLink" class="exportLink">Export as Batch</a>
+      <a href="#" id="exportJSONLink" class="button exportLink">Export as JSON</a> 
+      <a href="#" id="exportBatchLink" class="button exportLink">Export as Batch</a>
     </div>
     <div id="toolsDummy"> </div>
 
@@ -2087,7 +2143,7 @@ a.osm_search_content {
     </div>
     
     <div id="divKeywordsEditor">
-    <a href="#" onclick="javascript: $('#divKeywordsEditor').css('display', 'none'); return false; ">Schlieﬂen</a>
+    <a href="#" onclick="javascript: $('#divKeywordsEditor').css('display', 'none'); return false; " class="button">Schlieﬂen</a>
     </div>
 </div>
 
