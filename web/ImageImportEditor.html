@@ -7,8 +7,9 @@
     <meta name="keywords" content="JSON, Image-Import, Preparation" />
     <meta name="language" content="de" />
 
-    <script src="http://www.michas-ausflugstipps.de/jqplot/jquery.min.js" type="text/javascript"></script>
-    <script src="http://www.michas-ausflugstipps.de/jsres/JMATAllIn.js" type="text/javascript"></script>
+    <!--<base href="http://www.michas-ausflugstipps.de/">-->
+    <script src="http://www.michas-ausflugstipps.de/./jqplot/jquery.min.js" type="text/javascript"></script>
+    <script src="http://www.michas-ausflugstipps.de/./jsres/JMATAllIn.js" type="text/javascript"></script>
 
 <script type="text/javascript">
     /**
@@ -62,7 +63,7 @@
              || (navigator.userAgent.indexOf("MSIE") >= 0)
              || flgSafeMode) {
             // IE or SafeMode
-            var popup = window.open();
+            var popup = window.open("");
             $(popup.document.body).html("<pre>" + data + "</pre>");
             return false;
         } else {
@@ -83,6 +84,50 @@
          var field = document.getElementById(elementName);
          field.value = field.value + keyword;
      }    
+     
+     function formatGpxDateAsString(gpxDate) {
+         var strDate = gpxDate.split("T")[0];
+         var dateParts = strDate.split("-");
+         var date = dateParts[2] + "." + dateParts[1] + "." + dateParts[0];
+         var strTime = gpxDate.split("T")[1];
+         var time = strTime.split("Z")[0];
+         return date + " " + time;
+     }
+     
+     function calcDate(date, timeCorrector) {
+        if (! timeCorrector) {
+           return date;
+        }
+        return new Date(date.getTime() + timeCorrector);
+     }
+     
+     function parseGermanDateTime(strGermanDate) {
+         var strDate = strGermanDate.split(" ")[0];
+         var dateParts = strDate.split(".");
+         var strTime = strGermanDate.split(" ")[1];
+         var timeParts = strTime.split(":");
+         return new Date(dateParts[2], dateParts[1], dateParts[0], timeParts[0], timeParts[1], timeParts[2]);
+     }
+     
+     function formatGermanDateTime(date) {
+        return padNumber(date.getDate(), 2) + "." + padNumber(date.getMonth(), 2) + "." + date.getFullYear() 
+               + " " + padNumber(date.getHours(), 2) + ":" + padNumber(date.getMinutes(), 2) + ":" + padNumber(date.getSeconds(), 2);
+     }
+     
+     function correctGermanDateTime(strGermanDate, timeCorrector) {
+        var date = parseGermanDateTime(strGermanDate);
+        var newDate = calcDate(date, timeCorrector);
+        return formatGermanDateTime(newDate);
+     }
+     
+    function padNumber(number, count) {
+        var r = String(number);
+        while ( r.length < count) {
+           r = '0' + r;
+        }
+        return r;
+    }
+
      
      /* 
       * ########################################
@@ -164,7 +209,7 @@
                  );
      }
 
-     function appendInputTextArea(config, $parent, configField, id, data, content) {
+     function appendInputTextArea(config, $parent, configField, id, data, content, optionalAttributes) {
          var name = configField["name"];
          var required = configField["required"];
          var labelName = ucFirstAllWords(name);
@@ -180,6 +225,7 @@
                  + " id='input_" + name + "_" + id + "'"
                  + " class='input_textarea input_textarea_" + name + classRequired + "'"
                  + classRequired
+                 + (optionalAttributes ? " " + optionalAttributes + " ": "")
                  + " cols='30' rows='2'>"
                  + content
                  + "</textarea>"
@@ -263,9 +309,40 @@
          appendShowText(config, $parent, configField, id, data, content);
 
          // append url
-         $parent.append(" <a href='#' onclick=\"javascript:openFramePath('" + id + "'); return false;\">Show</a>");
+         $parent.append(" <a href='#' onclick=\"javascript:openImagePath('" + id + "'); return false;\">Bilder</a>");
      }
 
+     function appendInputText4Track(config, $parent, configField, id, data, content) {
+         // append show
+         appendInputTextArea(config, $parent, configField, id, data, content, " wrap='off' ");
+
+         // append url
+         $parent.append(" <a href='#' onclick=\"javascript:openTrackMap('" + id + "'); return false;\">Karte</a> <a href='#' onclick=\"javascript:syncTrackData('" + id + "'); return false;\">Sync</a>");
+
+         // Setup the Trackfile-Listener
+         var dropZone = document.getElementById("input_Track_" + id);
+         dropZone.addEventListener('dragover', handleTrackFileDragOver, false);
+         dropZone.addEventListener('drop', handleTrackFileSelect, false);
+         dropZone = document.getElementById("input_TrackFile_" + id);
+         dropZone.addEventListener('dragover', handleTrackFileDragOver, false);
+         dropZone.addEventListener('drop', handleTrackFileSelect, false);
+     }
+
+     function appendInputText4DateSync(config, $parent, configField, id, data, content) {
+         // append show
+         appendShowText(config, $parent, configField, id, data, content);
+         
+         // calc names
+         var name = configField['name'];
+         var track = "input_" + name + "_" + id;
+         name = name.replace(/Track/g, "My");
+         var my = "input_" + name + "_" + id;
+
+         // append url
+         $parent.append(" <a href='#' onclick=\"javascript:$('#" + my + "').val($('#" + track + "').val()); return false;\">-&gt;My</a>");
+     }
+
+     
      /* 
       * ########################################
       * ###
@@ -345,12 +422,22 @@
 
          // append new line
          var $container = appendDiv4Element($parent, "content_line_" + id, "content_line", "");
+         
+         // append new ue
+         var name = data[config.configName];
+         var $ueContainer = appendDiv4Element($container, "content_line_ue_" + id, "content_line_ue", name);
+         
+         // append new dataContainer
+         var $dataContainer = appendDiv4Element($container, "content_line_datacontainer_" + id, "content_line_datacontainer", "");
 
          // iterate datablocks
          for (var blockName in lstConfigBlocks) {
              // append datablocks
-             appendContentLine4Block(config, $container, blockName, id, data);
+             appendContentLine4Block(config, $dataContainer, blockName, id, data);
          }
+         
+         // append Toggler
+         jMATService.getPageLayoutService().appendBlockToggler("content_line_ue_" + id, "content_line_datacontainer_" + id);
 
          // return new line-JqueryObj
          return $container;
@@ -364,6 +451,9 @@
          var $container = appendDiv4Element($parent, "content_block_" + blockName + "_" + id,
                  "content_block " + " block_" + blockName + " content_block_" + blockName,
                  "");
+
+         // append new ue
+         var $ueContainer = appendDiv4Element($container, "content_block_ue_" + id, "content_block_ue", ucFirstAllWords(blockName));
 
          // iterate fields
          for (var index = 0; index < lstConfigFields.length; ++index) {
@@ -382,11 +472,16 @@
          // init vars
          var fieldName = fieldConfig["name"];
          var funcRef = fieldConfig["editor"];
+         var defaultValue = fieldConfig["defaultvalue"];
 
          // read content
          var content = data[fieldName];
          if (content == "undefined" || content == undefined) {
-             content = "";
+             if (defaultValue) {
+                content = defaultValue;
+             } else {
+                content = "";
+             }
          }
 
          // append new field
@@ -489,22 +584,102 @@
          return newName;
      }
      
-     function openFramePath(id) {
-         // field to setup
+     function openImagePath(id) {
          // field to setup
          var $path = $("#input_Path_" + id);
          var newPath = $path.val();
          newPath = newPath.replace(/\\/g, "/");
          newPath = "file:///" + newPath;
-         window.parent.setFramePath(newPath);
-    }
+         
+         // open Frame
+         document.getElementById('images').src=newPath;
+         
+         // toggle visibility
+         document.getElementById('images').style.display='block';
+         document.getElementById('mapContainer').style.display='none';
+     }
 
-    function setFramePath(path) {
+     function openTrackMap(id) {
          // field to setup
-         document.getElementById('images').src=path;
-    }
+         var $track = $("#input_Track_" + id);
+         var newTrack = $track.val();
 
-     /* 
+         // toggle visibility
+         document.getElementById('images').style.display='none';
+         document.getElementById('mapContainer').style.display='block';
+         
+         loadMap(newTrack);
+     }
+     
+     function syncTrackData(id) {
+        $("#input_AltAsc_" + id).val($("#data_asc").html());
+        $("#input_AltDesc_" + id).val($("#data_desc").html());
+        $("#input_Dist_" + id).val($("#data_dist").html());
+        $("#input_AltMin_" + id).val($("#data_min").html());
+        $("#input_AltMax_" + id).val($("#data_max").html());
+        $("#input_AltStart_" + id).val($("#data_elestart").html());
+        $("#input_AltEnd_" + id).val($("#data_eleend").html());
+        $("#input_TrackStartDate_" + id).val(
+            correctGermanDateTime(
+                $("#data_datestart").html(), 
+                $("#input_TrackTimeCorrector_" + id).val() * 60 * 60 * 1000));
+        $("#input_TrackEndDate_" + id).val(
+            correctGermanDateTime(
+                $("#data_dateend").html(), 
+                $("#input_TrackTimeCorrector_" + id).val() * 60 * 60 * 1000));
+     }
+     
+
+     /* File-Drag&Drop&Read inspired by http://www.html5rocks.com/de/tutorials/file/dndfiles/ */
+     function handleTrackFileSelect(evt) {
+        evt.stopPropagation();
+        evt.preventDefault();
+
+        // iterate files
+        var files = evt.dataTransfer.files;
+        for (var i = 0, f; f = files[i]; i++) {
+            
+            console.log("load File:" + f.name);
+        
+            // instantiate FileReader
+            var reader = new FileReader();
+            reader.onload = (function(theFile) {
+                return function(e) {
+                    // set new Track
+                    console.log("new track: " + e.target.result);
+                    
+                    // get id
+                    var eleId = evt.target.id;
+                    var id = eleId;
+                    id = id.replace(/input_TrackFile_/g, "");
+                    id = id.replace(/input_Track_/g, "");
+                    
+                    // format track
+                    var track = e.target.result;
+                    track = track.replace(/<trkpt /g, "\n<trkpt ");
+                    // set result
+                    $("#input_Track_" + id).val(track);
+                    $("#input_TrackFile_" + id).val(theFile.name);
+                    
+                    // openMap
+                    openTrackMap(id);
+                };
+            })(f);
+
+            // Read the new Tracks as Text
+            reader.readAsText(f);        
+        }
+     } 
+    
+     function handleTrackFileDragOver(evt) {
+        // Explicitly show this is a copy.
+        evt.stopPropagation();
+        evt.preventDefault();
+        evt.dataTransfer.dropEffect = 'copy';
+     }    
+
+
+    /* 
       * ########################################
       * ###
       * ### Load Data
@@ -598,7 +773,7 @@
          dataContainer.data = data;
 
          // find contentlines for $container
-         var contentLines = $container.find(".content_line");
+         var contentLines = $container.find(".content_line_datacontainer");
          console.log("contentlines:" + contentLines.length + " contentLines:"
                  + contentLines);
 
@@ -686,10 +861,19 @@
          // return data-obj
          return data;
      }
+     
+     function jsonReplacer(key, value) {
+        //console.log("key:" + key + "=" + value);
+        if (typeof value === "string") {
+           value = value.replace(/\</g, "&lt;");
+           value = value.replace(/\>/g, "&gt;");
+        }
+        return value;
+     }
 
      function downloadAsJSON($link, data, fileName) {
          // data
-         var json = JSON.stringify(data);
+         var json = JSON.stringify(data, jsonReplacer);
          
          // update link
          downloadAsFile($link, json, fileName, "application/json", "utf-8");
@@ -824,13 +1008,17 @@
          // activate exportLinks
          $(".exportLink").css("display", "inline");
          document.getElementById("exportJSONLink").onclick = function(event, link) {
+                 event.preventDefault();
                  extractTableContent(configContainer, $container, dataContainer);
                  downloadAsJSON($(this), dataContainer.data, 'data.json');
+                 return false;
              }
          ;
          document.getElementById("exportBatchLink").onclick = function(event, link) {
                  extractTableContent(configContainer, $container, dataContainer);
                  downloadAsBatchFile($(this), dataContainer.data, 'data.bat');
+                 event.preventDefault();
+                 return false;
              }
          ;
          
@@ -855,26 +1043,24 @@
          lstConfigBlocks["base"] = new Array();
          lstConfigBlocks["base"].push({ name : "Path", editor : appendInputText4Path, getter : getInputText});
 
-         lstConfigBlocks["orig"] = new Array();
-         lstConfigBlocks["orig"].push({ name : "Ort"});
-         lstConfigBlocks["orig"].push({ name : "StartDate"});
-         lstConfigBlocks["orig"].push({ name : "EndDate"});
+         lstConfigBlocks["vorgabe"] = new Array();
+         lstConfigBlocks["vorgabe"].push({ name : "Ort"});
+         lstConfigBlocks["vorgabe"].push({ name : "StartDate"});
+         lstConfigBlocks["vorgabe"].push({ name : "EndDate"});
 
-         lstConfigBlocks["my"] = new Array();
-         lstConfigBlocks["my"].push({ name : "Type", editor : appendInputSelectRate, getter : getInputSelectRate, required: true});
-         lstConfigBlocks["my"].push({ name : "Praefix", editor : appendInputText, getter : getInputText});
-
-         lstConfigBlocks["my2"] = new Array();
-         lstConfigBlocks["my2"].push({ name : "MyOrt", editor : appendInputText, getter : getInputText, required: true});
-         lstConfigBlocks["my2"].push({ name : "MyStartDate", editor : appendInputDate, getter : getInputText, required: true});
-         lstConfigBlocks["my2"].push({ name : "MyEndDate", editor : appendInputDate, getter : getInputText, required: true});
-
-         lstConfigBlocks["data2"] = new Array();
-         lstConfigBlocks["data2"].push({ name : "Personen", editor : appendInputText, getter : getInputText});
-         lstConfigBlocks["data2"].push({ name : "Keywords", editor : appendInputText4Keywords, getter : getInputTextArea, required: true});
+         lstConfigBlocks["config"] = new Array();
+         lstConfigBlocks["config"].push({ name : "Type", editor : appendInputSelectRate, getter : getInputSelectRate, required: true});
+         lstConfigBlocks["config"].push({ name : "Praefix", editor : appendInputText, getter : getInputText});
+         lstConfigBlocks["config"].push({ name : "TimeCorrector", editor : appendInputText, getter : getInputText});
+         lstConfigBlocks["config"].push({ name : "MyOrt", editor : appendInputText, getter : getInputText, required: true});
+         lstConfigBlocks["config"].push({ name : "MyStartDate", editor : appendInputDate, getter : getInputText, required: true});
+         lstConfigBlocks["config"].push({ name : "MyEndDate", editor : appendInputDate, getter : getInputText, required: true});
 
          lstConfigBlocks["data"] = new Array();
+         lstConfigBlocks["data"].push({ name : "Personen", editor : appendInputText, getter : getInputText});
          lstConfigBlocks["data"].push({ name : "Name", editor : appendInputText4Name, getter : getInputText, required: true});
+         lstConfigBlocks["data"].push({ name : "Keywords", editor : appendInputText4Keywords, getter : getInputTextArea, required: true});
+         lstConfigBlocks["data"].push({ name : "Comment", editor : appendInputTextArea, getter : getInputTextArea, required: false});
 
          lstConfigBlocks["rate"] = new Array();
          lstConfigBlocks["rate"].push({ name : "GESAMT", editor : appendInputSelectRate, getter : getInputSelectRate});
@@ -885,6 +1071,20 @@
          lstConfigBlocks["rate"].push({ name : "AUSDAUER", editor : appendInputSelectRate, getter : getInputSelectRate});
          lstConfigBlocks["rate"].push({ name : "KRAFT", editor : appendInputSelectRate, getter : getInputSelectRate});
          lstConfigBlocks["rate"].push({ name : "MENTAL", editor : appendInputSelectRate, getter : getInputSelectRate});
+
+         lstConfigBlocks["track"] = new Array();
+         lstConfigBlocks["track"].push({ name : "TrackFile", editor : appendInputText, getter : getInputTextArea, required: false});
+         lstConfigBlocks["track"].push({ name : "Track", editor : appendInputText4Track, getter : getInputTextArea, required: false});
+         lstConfigBlocks["track"].push({ name : "TrackTimeCorrector", editor : appendInputText, getter : getInputText, defaultvalue: "2"});
+         lstConfigBlocks["track"].push({ name : "TrackStartDate", editor : appendInputText4DateSync, getter : getInputText});
+         lstConfigBlocks["track"].push({ name : "TrackEndDate", editor : appendInputText4DateSync, getter : getInputText});
+         lstConfigBlocks["track"].push({ name : "Dist", editor : appendInputText, getter : getInputText});
+         lstConfigBlocks["track"].push({ name : "AltMin", editor : appendInputText, getter : getInputText});
+         lstConfigBlocks["track"].push({ name : "AltMax", editor : appendInputText, getter : getInputText});
+         lstConfigBlocks["track"].push({ name : "AltAsc", editor : appendInputText, getter : getInputText});
+         lstConfigBlocks["track"].push({ name : "AltDesc", editor : appendInputText, getter : getInputText});
+         lstConfigBlocks["track"].push({ name : "AltStart", editor : appendInputText, getter : getInputText});
+         lstConfigBlocks["track"].push({ name : "AltEnd", editor : appendInputText, getter : getInputText});
 
          // set config
          configContainer.configBlocks = lstConfigBlocks;
@@ -1050,7 +1250,7 @@
 /*
 ########################
 ##
-## Base
+## Base-Styles
 ##
 ########################
 */
@@ -1131,7 +1331,21 @@ input.required:invalid , textarea.required:invalid, select.required:invalid {
     overflow-y:auto;
 }
 
+#contentContainer {
+    float: left;
+    width: 500px;
+    height: 500px;
+}
+#mapContainer {
+    display: none;
+    float: left;
+    width: 500px;
+    height: 500px;
+    overflow-x:auto;
+    overflow-y:auto;
+}
 #images {
+    display: none;
     float: left;
     width: 500px;
     height: 500px;
@@ -1172,9 +1386,19 @@ input.required:invalid , textarea.required:invalid, select.required:invalid {
     width: 500px;
     margin-top: 10px;
 }
-.content_block {
-    border: 1px thin black;
+.content_line_ue {
     float: left;
+}
+.content_line_datacontainer {
+    float: left;
+}
+.content_block {
+    float: left;
+}
+.content_block_ue {
+    border-top: 1px solid black;
+    clear: both;
+    font-weight: bold;
 }
 .content_column {
     border: 1px dotted blue;
@@ -1197,7 +1421,7 @@ input.required:invalid , textarea.required:invalid, select.required:invalid {
 }
 
 /** Block: Orig **/
-.block_orig {
+.block_vorgabe {
     clear: both;
     width: 500px;
 }
@@ -1212,7 +1436,7 @@ input.required:invalid , textarea.required:invalid, select.required:invalid {
 }
 
 /** Block: My **/
-.block_my {
+.block_config {
     clear: both;
     width: 500px;
 }
@@ -1220,16 +1444,16 @@ input.required:invalid , textarea.required:invalid, select.required:invalid {
     width: 200px;
 }
 .column_Praefix {
-    width: 200px;
+    width: 140px;
 }
 .input_Praefix {
-    width: 190px;
+    width: 130px;
 }
-
-/** Block: My2 **/
-.block_my2 {
-    clear: both;
-    width: 500px;
+.column_TimeCorrector {
+    width: 140px;
+}
+.input_TimeCorrector {
+    width: 130px;
 }
 .column_MyOrt {
     width: 200px;
@@ -1256,29 +1480,125 @@ input.required:invalid , textarea.required:invalid, select.required:invalid {
     width: 500px;
 }
 .column_Name {
-    width: 450px;
+    width: 480px;
 }
 .input_Name {
     width: 400px;
     background: #83F792;
 }
-/** Block: Data2 **/
-.block_data2 {
-    clear: both;
-    width: 500px;
-}
 .column_Personen {
-    width: 450px;
+    width: 480px;
 }
 .input_Personen {
     width: 440px;
 }
 .column_Keywords {
-    width: 450px;
+    width: 480px;
 }
 .input_textarea_Keywords {
     width: 400px;
-    height: 60px;
+    height: 30px;
+}
+.input_textarea_Keywords:active, .input_textarea_Keywords:focus {
+    height: 120px;
+}
+.column_Comment {
+    width: 480px;
+}
+.input_textarea_Comment {
+    width: 400px;
+    height: 20px;
+}
+.input_textarea_Comment:active, .input_textarea_Comment:focus {
+    height: 200px;
+}
+/** Block: Track **/
+.block_track {
+    clear: both;
+    width: 500px;
+}
+.column_TrackFile {
+    width: 480px;
+}
+.input_TrackFile {
+    width: 400px;
+}
+.column_Track {
+    width: 480px;
+}
+.input_textarea_Track {
+    width: 400px;
+    height: 40px;
+    white-space: pre;
+    word-wrap: normal;
+    overflow-x: scroll;
+    font-size: 9px;
+}
+.input_textarea_Track:active, .input_textarea_Track:focus {
+    height: 200px;
+    font-size: 9px;
+}
+.column_TrackStartDate {
+    width: 175px;
+}
+.input_TrackStartDate {
+    width: 130px;
+}
+.column_TrackEndDate {
+    width: 175px;
+}
+.input_TrackEndDate {
+    width: 130px;
+}
+.column_TrackTimeCorrector {
+    width: 140px;
+}
+.input_TrackTimeCorrector {
+    width: 130px;
+}
+.column_Dist {
+    clear: both;
+    width: 110px;
+}
+.input_Dist {
+    width: 100px;
+}
+.column_AltMin {
+    width: 110px;
+}
+.input_AltMin {
+    width: 100px;
+}
+.column_AltMax {
+    width: 110px;
+}
+.input_AltMax {
+    width: 100px;
+}
+.column_AltAsc {
+    clear: both;
+    width: 110px;
+}
+.input_AltAsc {
+    width: 100px;
+}
+.column_AltDesc {
+    width: 110px;
+}
+.input_AltDesc {
+    width: 100px;
+}
+.column_AltStart {
+    width: 110px;
+}
+.input_AltStart {
+    width: 100px;
+}
+.column_AltEnd {
+    width: 110px;
+}
+.input_AltEnd {
+    width: 100px;
 }
 
 /** Block: Rate **/
@@ -1339,7 +1659,398 @@ input.required:invalid , textarea.required:invalid, select.required:invalid {
    background: white;
 }
 
+/*
+########################
+# Toggler
+########################
+*/
+.blockToggler {
+   float: right;
+   display: block;
+}
+
+.togglecontainer {
+    float: left;
+}
+
+.togglecontainer-formfilter {
+    width: 100%;
+}
+
+.icon-blocktoggler {
+    border: none;
+    width: 19px;
+}
+
 </style>
+
+
+
+<!-- APIs fuer Maps -->
+<script type="text/javascript" src="http://www.michas-ausflugstipps.de/./jsres/OpenLayers-2.11.js"></script>
+<script type="text/javascript" src="http://www.michas-ausflugstipps.de/./jsres/OpenStreetMap.js"></script>
+<!--<script type="text/javascript" src="http://www.openstreetmap.org/openlayers/OpenStreetMap.js"></script>-->
+<script type="text/javascript" src="http://www.michas-ausflugstipps.de/./jsres/jms/JMSGeoMapOpenLayer.js?DUMMY=20130105"></script>
+
+<!-- Charts -->
+<!--[if lt IE 9]><script language="javascript" type="text/javascript" src="http://www.michas-ausflugstipps.de/./jqplot/excanvas.js"></script><![endif]-->
+<script type="text/javascript" src="http://www.michas-ausflugstipps.de/./jqplot/jquery.min.js"></script>
+<script type="text/javascript" src="http://www.michas-ausflugstipps.de/./jqplot/jquery.jqplot.min.js"></script>
+<link rel="stylesheet" type="text/css" href="http://www.michas-ausflugstipps.de//./jqplot/jquery.jqplot.css" />
+<script>
+    /* 
+     * ########################################
+     * ###
+     * ### Overload Toggler 
+     * ###
+     * ######################################## 
+     */
+    /**
+     * fuegt FormRowToggler an Elternelement an
+     */
+    JMATPageLayout.prototype.appendBlockToggler = function(parentId, toggleId) {
+        var html = jMATService.getPageLayoutService().createBlockTogglerHtml(toggleId, toggleId, "<img src='http://www.michas-ausflugstipps.de/./images/icon-up.gif' class='icon-blocktoggler icon-blocktoggleron'>", "<img src='http://www.michas-ausflugstipps.de/./images/icon-down.gif' class='icon-blocktoggler icon-blocktogglerof'>", "", "");
+        jMATService.getJMSServiceObj().appendHtml(html,parentId, "blockToggler");
+    }
+
+    /* 
+     * ########################################
+     * ###
+     * ### Overload GPX-Parser 
+     * ###
+     * ######################################## 
+     */
+
+    /**
+     * Parsen der GPX-Daten und Aufruf von objMap.addTour und objMap.addLocation
+     * @param doc - XMLDocument
+     */
+    JMSGeoMapGPXLoad.prototype.parseXMLDocument = function(doc) {
+        // Tags definieren
+        var constTagNameEle = "ele";
+        var constTagNameTime = "time";
+        var constTagNameRte = "trkseg";
+        var constTagNameRtept = "trkpt";
+
+        if (this.jmsLoggerJMSGeoMapGPXLoad && this.jmsLoggerJMSGeoMapGPXLoad.isDebug) 
+            this.jmsLoggerJMSGeoMapGPXLoad.logDebug("JMSGeoMapGPXLoad.parseXMLDocument me:" + this + " url:" + this.url);
+        if (doc) {
+            /* Tracks extrahieren
+             */
+            var lstTags = doc.getElementsByTagName(constTagNameRte);
+            if (this.jmsLoggerJMSGeoMapGPXLoad && this.jmsLoggerJMSGeoMapGPXLoad.isDebug) 
+                this.jmsLoggerJMSGeoMapGPXLoad.logDebug("JMSGeoMapGPXLoad.parseXMLDocument valid document parsing Tracks me:" + this + " url:" + this.url + " LstRTE:" + lstTags.length);
+            var lstFeatures = [];
+
+            // Tags durchlaufen
+            for (var i = 0; i< lstTags.length; i++) {
+                
+                var color = this.getJMSGeoMapObj().randomColor();
+                var tag = lstTags[i];
+                var lstChildTags = tag.childNodes;
+                var startPoint = null;
+                var pointList = [];
+                var title = "Route";
+                var description = "Keine Beschreibung.";
+
+                // Kindselemente durchlaufen
+                for (var j = 0; j < lstChildTags.length; j++) {
+                    var childTag = lstChildTags[j];
+                    var nodeName = childTag.nodeName;
+
+                    // Eigenschaften auswerten
+                    switch (nodeName) {
+                    case 'topografix:color':
+                        // Farbe
+                        color = OpenLayers.Util.getXmlNodeValue(childTag);
+                        break;
+                    case 'color':
+                        // Farbe
+                        color = OpenLayers.Util.getXmlNodeValue(childTag);
+                        break;
+                    case constTagNameRtept:
+                        // Trackpunkte extrahieren und OpenLayer-Track anlegen
+
+                        // Farbe lesen  
+                        if (color == '')
+                            color=this.getJMSGeoMapObj().randomColor();
+
+                        // Koordinaten anlegen
+                        if (childTag.getAttribute('lat') && childTag.getAttribute('lon')) {
+                            // Hoehe und Zeit aus Kindeslementen lesen
+                            var ele = 0;
+                            var time = null;
+
+                            // Kindselemente durchlaufen
+                            var lstTrkpChildTags = childTag.childNodes;
+                            for (var k = 0; k < lstTrkpChildTags.length; k++) {
+                                var trkpChildTag = lstTrkpChildTags[k];
+                                var trkpNodeName = trkpChildTag.nodeName;
+                                // Eigenschaften auswerten
+                                switch (trkpNodeName) {
+                                case constTagNameEle:
+                                    // Hoehe
+                                    ele = OpenLayers.Util.getXmlNodeValue(trkpChildTag);
+                                    break;
+                                case constTagNameTime:
+                                    // Zeit: 2012-08-24T17:55:00Z
+                                    time = OpenLayers.Util.getXmlNodeValue(trkpChildTag);                               
+                                    //var strDate = time;
+                                    //var dateParts = strDate.split("-");
+                                    //var date = new Date(dateParts[2], (dateParts[1] - 1), dateParts[0]);
+                                    break;
+                                default:
+                                    // alert('unknown ' + trkNodeName);
+                                    break;
+                                }
+                            }
+
+                            //Punkt anlegen
+                            var point = 
+                                this.getJMSGeoMapObj().createJMSGeoLatLonObj(
+                                        childTag.getAttribute('lat'), 
+                                        childTag.getAttribute('lon'), 
+                                        ele, 
+                                        time);
+                            if (!startPoint) startPoint = point;
+                            pointList.push(point);
+                        }
+                        break;
+                    case 'name':
+                        title = OpenLayers.Util.getXmlNodeValue(childTag);
+                        break;
+                    case 'desc':
+                        description = OpenLayers.Util.getXmlNodeValue(childTag);
+                        if (description) description = description.replace(/\n/g, "<br>");
+                        break;
+                    default:
+                        // alert('unknown ' + nodeName);
+                        break;
+                    }
+                }
+                // Tour anlegen
+                if (this.jmsLoggerJMSGeoMapGPXLoad && this.jmsLoggerJMSGeoMapGPXLoad.isDebug) 
+                    this.jmsLoggerJMSGeoMapGPXLoad.logDebug("JMSGeoMapGPXLoad.parseXMLDocument add Track me:" + this + " url:" + this.url + " title:" + title + " start:" + geoPoint + " color:" + color);
+                this.getJMSGeoMapObj().addTour(null, this.strNameLayer, title, description, startPoint, pointList,
+                        {
+                    color: color,
+                    loadInfoWindowType: JMSGeoMapFeature.TYPE_LOADINFOWINDOW_LOCAL
+                        }
+                );
+            }
+        }
+
+        return 0;
+    };
+
+     /* 
+      * ########################################
+      * ###
+      * ### Map
+      * ###
+      * ######################################## 
+      */
+
+    // map-Vars
+    var mapMP = null;
+    var map = null;
+    var msChartObj = null;
+
+    function initMap() {
+        // config
+        var mapDivName = "mapDiv";
+        var pos = new JMSGeoLatLon(49.32667, 11.02);
+        var zoom = 10;
+        var globOptions = {
+            supressLoadingOnMoveEnd: 1,
+            supressImageLoading: 1,
+            supressTourLoading: 1,
+            supressTrackLoading: 0,
+            supressLocationLoading: 1,
+            MAPOPTIONS_OPENLAYERS: {
+            }
+        };
+
+        // create Map
+        mapMP = new JMSGeoMapOpenLayer(mapDivName, globOptions);
+        mapMP.createMapObj();
+
+        // add Defaultlayer
+        mapMP.addDefaultLayer();
+
+        // add OsmOrts-Suche
+        //mapMP.addOsmLocSearch('mapMP');
+
+        // add Default-Controls
+        //mapMP.addDefaultControls();
+
+        // center
+        mapMP.setCenter(pos, zoom);
+
+        // add View-Rectangle
+        mapMP.setViewRectangle("mplayer", 0.35, 0.35);
+
+        // add MP-Controls (toggle Features, Ortsuche, FullScreen)
+        //mapMP.addJMSGeoMapFeatureControls();
+    }
+
+
+    function loadMap(trackContent) {
+
+        var urlGPX = "localtrack_from_input";
+
+        // parse if it is a string
+        if (typeof trackContent == "string") {
+            trackContent = OpenLayers.parseXMLString(trackContent);
+        }
+        
+        // remove old tracks
+        mapMP.removeJMSGeoMapFeatures("TOUR");
+        mapMP.removeJMSGeoMapFeatures("TRACK");
+
+        // load Chart
+        msChartObj = new JMSGeoProfile('chartdiv');
+        var statusInfoText = "Lade Daten vom Server";
+        var mpChartGPXLoad = new JMSGeoMapGPXLoad(msChartObj, "mplayer", urlGPX, statusInfoText);
+        mpChartGPXLoad.parseXMLDocument(trackContent);
+        
+
+        // load Map
+        var mpGPXLoad = new JMSGeoMapGPXLoad(mapMP, "mplayer", urlGPX, statusInfoText);
+        mpGPXLoad.parseXMLDocument(trackContent);
+        map = mapMP;
+
+        // load tracks aso
+        var showLoadInfo = 1;
+        var statusInfoText = "";
+        if (showLoadInfo) {
+            statusInfoText = "Lade Touren-Daten vom Server. Das kann dauern ;-)";
+        }
+
+        // center to Feature
+        var delayedCenter = window.setInterval(
+            function() {
+                // wait 4 seconds for loading
+                window.clearInterval(delayedCenter);
+
+                // center
+                var mpFeatureObj = null;
+                var tmpHash = mapMP.hshFeature["TOUR"];
+                if (tmpHash) {
+                    for (var i in tmpHash) {
+                        mpFeatureObj = tmpHash[i];
+                        if (! mapMP.isEmpty(mpFeatureObj) && mpFeatureObj) {
+                            mpFeatureObj.centerMapOnFeature(mapMP, 14, 1);
+                        }
+                    }
+                }
+                
+                // output Tourdata
+                $("#data_asc").html((mpFeatureObj.metaAsc ? mpFeatureObj.metaAsc.toFixed(0) : ""));
+                $("#data_desc").html((mpFeatureObj.metaDesc ? mpFeatureObj.metaDesc.toFixed(0) : ""));
+                $("#data_dist").html((mpFeatureObj.metaDist ? mpFeatureObj.metaDist.toFixed(1) : ""));
+                $("#data_min").html(mpFeatureObj.getBoundsJMSGeoLatLon()[0].flEle.toFixed(0));
+                $("#data_max").html(mpFeatureObj.getBoundsJMSGeoLatLon()[1].flEle.toFixed(0));
+                
+                // get first and last
+                var arrPoints = mpFeatureObj.getArrJMSGeoLatLon();
+                var firstPoint = arrPoints[0];
+                $("#data_elestart").html(firstPoint.flEle.toFixed(0));
+                $("#data_datestart").html(formatGpxDateAsString(firstPoint.time));
+                var lastPoint = arrPoints.pop();
+                arrPoints.push(lastPoint);
+                $("#data_eleend").html(lastPoint.flEle.toFixed(0));
+                $("#data_dateend").html(formatGpxDateAsString(lastPoint.time));
+            }, 4000);
+    }
+</script>
+<style type="text/css">
+/*
+########################
+##
+## Map-Styles
+##
+########################
+v\:* {
+  behavior:url(#default#VML);
+}
+
+.olControlAttribution {
+font-size: smaller;
+right: 3px;
+top: 1000px;
+color: #000000;
+}
+
+/* JMSGeoMap-Styles */
+.olPanelJMSGeoMapFeatures {
+    left: auto;
+    right: 8px;
+    top: auto;
+    bottom: 8px;
+}
+.olPanelJMSGeoMapFeatures div {
+    width:  60px;
+    height: 20px;
+}
+div.PanelButtonJMSGeoMapFeaturesTourItemInactive {
+    background-image: url("http://www.michas-ausflugstipps.de/images/bt_base_tour_aktiv.gif");
+}
+div.PanelButtonJMSGeoMapFeaturesTourItemActive {
+    background-image: url("http://www.michas-ausflugstipps.de/images/bt_base_tour_inaktiv.gif");
+}
+div.PanelButtonJMSGeoMapFeaturesImageItemInactive {
+    background-image: url("http://www.michas-ausflugstipps.de/images/bt_base_image_aktiv.gif");
+}
+div.PanelButtonJMSGeoMapFeaturesImageItemActive {
+    background-image: url("http://www.michas-ausflugstipps.de/images/bt_base_image_inaktiv.gif");
+}
+div.PanelButtonJMSGeoMapFeaturesTrackItemInactive {
+    background-image: url("http://www.michas-ausflugstipps.de/images/bt_base_track_aktiv.gif");
+}
+div.PanelButtonJMSGeoMapFeaturesTrackItemActive {
+    background-image: url("http://www.michas-ausflugstipps.de/images/bt_base_track_inaktiv.gif");
+}
+div.PanelButtonJMSGeoMapFeaturesLocationItemInactive {
+    background-image: url("http://www.michas-ausflugstipps.de/images/bt_base_location_aktiv.gif");
+}
+div.PanelButtonJMSGeoMapFeaturesLocationItemActive {
+    background-image: url("http://www.michas-ausflugstipps.de/images/bt_base_location_inaktiv.gif");
+}
+div.PanelButtonFullScreenItemInactive {
+    background-image: url("http://www.michas-ausflugstipps.de/images/bt_base_fullscreen_aktiv.gif");
+}
+div.PanelButtonFullScreenItemActive {
+    background-image: url("http://www.michas-ausflugstipps.de/images/bt_base_fullscreen_aktiv.gif");
+}
+div.PanelButtonOsmSearchItemActive {
+    background-image: url("http://www.michas-ausflugstipps.de/images/bt_base_osmsearch_aktiv.gif");
+}
+div.PanelButtonOsmSearchItemInactive {
+    background-image: url("http://www.michas-ausflugstipps.de/images/bt_base_osmsearch_aktiv.gif");
+}
+div.osm_search {
+    font-size: 9px;
+}
+div.osm_search_title {
+    font-size: 9px;
+}
+div.osm_search_content {
+    font-size: 9px;
+}
+a.osm_search {
+    font-size: 9px;
+}
+a.osm_search_title {
+    font-size: 9px;
+}
+a.osm_search_content {
+    font-size: 9px;
+}
+</style>
+
+
+
 </head>
 <body>
 
@@ -1355,6 +2066,26 @@ input.required:invalid , textarea.required:invalid, select.required:invalid {
     <div class="container" id="container">
     </div>
 
+    <div class="contentContainer" id="contentContainer">
+        <div id="mapContainer" class="contentContainer">
+           <div id="mapDiv" style="width: 600px; height: 400px"></div>
+           <br clear="all">
+           <div id="data">
+               Asc:<span id="data_asc"></span> Hm
+               Desc:<span id="data_desc"></span> Hm
+               Dist:<span id="data_dist"></span> km
+               Min:<span id="data_min"></span> m
+               Max:<span id="data_max"></span> m
+               StartEle:<span id="data_elestart"></span> m
+               EndEle:<span id="data_eleend"></span> m
+               StartDate:<span id="data_datestart"></span>
+               EndDate:<span id="data_dateend"></span>
+           </div>
+           <br clear="all">
+           <div id="chartdiv" style="height:200px;width:600px; "></div> 
+       </div>
+    </div>
+    
     <div id="divKeywordsEditor">
     <a href="#" onclick="javascript: $('#divKeywordsEditor').css('display', 'none'); return false; ">Schlieﬂen</a>
     </div>
@@ -1375,6 +2106,7 @@ input.required:invalid , textarea.required:invalid, select.required:invalid {
             data: new Array()
     };
     var configContainer = {
+            configName: 'Path',
             configRates: {},
             flgConfigRatesLoaded: false,
             configKeywords: {},
@@ -1408,42 +2140,31 @@ input.required:invalid , textarea.required:invalid, select.required:invalid {
 
                     // run app
                     runApp(configContainer, dataContainer);
+                    
+                    // toogle all blocks
+                    jMATService.getPageLayoutService().doAllBlockToggler(false);
                 }
             },
             1000
         );
     }
 
-    function initFrameSetVersion() {
-        // check for frame
-        console.log("check for frame:" + window.name);
-        if (! window.parent || window.parent.name != "ImageImportEditorFrame") {
-            // I am the parent and create the frames
-            console.log("I am not the App-Frame:" + window.name);
-            window.name = "ImageImportEditorFrame";
-            $('body').html( "" );
-            document.open();
-            document.writeln("<!DOCTYPE html><html> <head> <script type='text/javascript'>function setFramePath(path) {document.getElementById('images').src=path;}" 
-                            + " <" + "/script> <" + "/head> <frameset cols='600px,*'>"
-                            + "<frame src='" + window.location + "' name='ImageImportEditor' id='ImageImportEditor'>"
-                            + "<frame src='' name='images' id='images'></frameset> </html>");
-            document.close();
-        } else {
-            // I am the App-Frame
-            console.log("I am the App-Frame:" + window.name);
-            window.name = "ImageImportEditor";
-            loadApp(configContainer, dataUrl, dataContainer);
-        }
-    }
     
     function initIFrameVersion() {
         console.log("I am the App-Frame:" + window.name);
         var height = window.innerHeight;
         var width = "600px";
-        $( "<iframe name='images' id='images' class='images' src='' width='" + width + "'  height='" + height + "'>" ).insertAfter( "#container" );
-        $("#container").width("500px");
+        
+        // add iframe
+        $( "<iframe name='images' id='images' class='images' src='' width='" + width + "'  height='" + height + "'>" ).insertAfter( "#mapContainer" );
+        $("#container").width("520px");
+        
+        // load App
         loadApp(configContainer, dataUrl, dataContainer);
         setupAppSize();
+        
+        // add Map
+        initMap();
 
         // add resize event
         $( window ).resize(function() {
@@ -1460,12 +2181,16 @@ input.required:invalid , textarea.required:invalid, select.required:invalid {
         if (width > ($("#container").width() + 200)) {
             $("#app").width(width);
             console.log("setup new width:" + $("#images").width());
+            $("#contentContainer").width(width - $("#container").width() - 30);
+            $("#mapContainer").width(width - $("#container").width() - 30);
             $("#images").width(width - $("#container").width() - 30);
         }
         if (height > 400) {
             $("#app").height(height);
             console.log("setup new height:" + $("#images").height());
             $("#container").height(height - 30);
+            $("#contentContainer").height(height - 30);
+            $("#mapContainer").height(height - 30);
             $("#images").height(height - 30);
         }
     }
