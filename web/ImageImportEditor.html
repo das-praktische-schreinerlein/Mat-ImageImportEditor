@@ -106,12 +106,17 @@
          var dateParts = strDate.split(".");
          var strTime = strGermanDate.split(" ")[1];
          var timeParts = strTime.split(":");
-         return new Date(dateParts[2], dateParts[1], dateParts[0], timeParts[0], timeParts[1], timeParts[2]);
+         return new Date(dateParts[2], dateParts[1], dateParts[0], 
+                         timeParts[0], timeParts[1], timeParts[2]);
      }
      
      function formatGermanDateTime(date) {
-        return padNumber(date.getDate(), 2) + "." + padNumber(date.getMonth(), 2) + "." + date.getFullYear() 
-               + " " + padNumber(date.getHours(), 2) + ":" + padNumber(date.getMinutes(), 2) + ":" + padNumber(date.getSeconds(), 2);
+        return padNumber(date.getDate(), 2) 
+                 + "." + padNumber(date.getMonth(), 2) 
+                 + "." + date.getFullYear() 
+                 + " " + padNumber(date.getHours(), 2) 
+                 + ":" + padNumber(date.getMinutes(), 2) 
+                 + ":" + padNumber(date.getSeconds(), 2);
      }
      
      function correctGermanDateTime(strGermanDate, timeCorrector) {
@@ -140,19 +145,25 @@
      function appendShowText(config, $parent, configField, id, data, content) {
          var name = configField["name"];
          var required = configField["required"];
+         var tooltip = configField["tooltip"];
          var labelName = ucFirstAllWords(name);
          var $label = appendLabel4Element($parent, "labelinput_" + name + "_" + id,
                  "label_input_text label_input_" + name,
-                 labelName, "input_" + name + "_" + id, required);
+                 labelName, "input_" + name + "_" + id, required, tooltip);
 
          var classRequired = "";
          if (required != "undefinded" && required) {
              classRequired = " required ";
          }
+         var tooltipele = "";
+         if (tooltip) {
+            tooltipele = " data-tooltip='" + tooltip + "' ";
+         }
          $parent.append("<input type='text' "
                  + " id='input_" + name + "_" + id + "'"
                  + " class='input_text input_" + name + classRequired + "'"
                  + " value='" + content + "'" + classRequired
+                 + tooltipele
                  + " size='100' readonly/>"
                  );
      }
@@ -161,18 +172,24 @@
          var name = configField["name"];
          var required = configField["required"];
          var labelName = ucFirstAllWords(name);
+         var tooltip = configField["tooltip"];
          var $label = appendLabel4Element($parent, "labelinput_" + name + "_" + id,
                  "label_input_text label_input_" + name,
-                 labelName, "input_" + name + "_" + id, required);
+                 labelName, "input_" + name + "_" + id, required, tooltip);
 
          var classRequired = "";
          if (required != "undefinded" && required) {
              classRequired = " required ";
          }
+         var tooltipele = "";
+         if (tooltip) {
+            tooltipele = " data-tooltip='" + tooltip + "' ";
+         }
          $parent.append("<input type='text' "
                  + " id='input_" + name + "_" + id + "'"
                  + " class='input_text input_" + name + classRequired + "'"
                  + " value='" + content + "'" + classRequired
+                 + tooltipele
                  + " size='100' />"
                  );
      }
@@ -183,7 +200,9 @@
 
          // iterate blocks from $contentline
          $.each(inputFields, function (index, inputField) {
-                 console.log("inputfieldName: " + configField["name"] + " contentfield:" + index + " field:" + $(inputField).val());
+                 console.log("inputfieldName: " + configField["name"] 
+                           + " contentfield:" + index 
+                           + " field:" + $(inputField).val());
                  data[configField["name"]] = $(inputField).val();
              }
          );
@@ -193,18 +212,24 @@
          var name = configField["name"];
          var required = configField["required"];
          var labelName = ucFirstAllWords(name);
+         var tooltip = configField["tooltip"];
          var $label = appendLabel4Element($parent, "labelinput_" + name + "_" + id,
                  "label_input_text label_input_" + name,
-                 labelName, "input_" + name + "_" + id, required);
+                 labelName, "input_" + name + "_" + id, required, tooltip);
 
          var classRequired = "";
          if (required != "undefinded" && required) {
              classRequired = " required ";
          }
+         var tooltipele = "";
+         if (tooltip) {
+            tooltipele = " data-tooltip='" + tooltip + "' ";
+         }
          $parent.append("<input type='text' "
                  + " id='input_" + name + "_" + id + "'"
                  + " class='input_date input_" + name + classRequired + "'"
                  + " value='" + content + "'" + classRequired
+                 + tooltipele
                  + " size='25' />"
                  );
      }
@@ -213,19 +238,25 @@
          var name = configField["name"];
          var required = configField["required"];
          var labelName = ucFirstAllWords(name);
+         var tooltip = configField["tooltip"];
          var $label = appendLabel4Element($parent, "labelinput_" + name + "_" + id,
                  "label_input_textarea label_input_" + name,
-                 labelName, "input_" + name + "_" + id, required);
+                 labelName, "input_" + name + "_" + id, required, tooltip);
 
          var classRequired = "";
          if (required != "undefinded" && required) {
              classRequired = " required ";
+         }
+         var tooltipele = "";
+         if (tooltip) {
+            tooltipele = " data-tooltip='" + tooltip + "' ";
          }
          $parent.append("<textarea "
                  + " id='input_" + name + "_" + id + "'"
                  + " class='input_textarea input_textarea_" + name + classRequired + "'"
                  + classRequired
                  + (optionalAttributes ? " " + optionalAttributes + " ": "")
+                 + tooltipele
                  + " cols='30' rows='2'>"
                  + content
                  + "</textarea>"
@@ -238,7 +269,9 @@
 
          // iterate blocks from $contentline
          $.each(inputFields, function (index, inputField) {
-                 console.log("textareafieldName: " + configField["name"] + " contentfield:" + index + " field:" + $(inputField).val());
+                 console.log("textareafieldName: " + configField["name"] 
+                           + " contentfield:" + index 
+                           + " field:" + $(inputField).val());
                  data[configField["name"]] = $(inputField).val();
              }
          );
@@ -260,18 +293,24 @@
          var name = configField["name"];
          var required = configField["required"];
          var labelName = ucFirstAllWords(name);
+         var tooltip = configField["tooltip"];
          var $label = appendLabel4Element($parent, "labelinput_" + name + "_" + id,
                  "label_input_select label_input_" + name,
-                 labelName, "input_" + name + "_" + id, required);
+                 labelName, "input_" + name + "_" + id, required, tooltip);
 
          var classRequired = "";
          if (required != "undefinded" && required) {
              classRequired = " required ";
          }
+         var tooltipele = "";
+         if (tooltip) {
+            tooltipele = " data-tooltip='" + tooltip + "' ";
+         }
          $parent.append("<select "
                  + " id='input_" + name + "_" + id + "'"
                  + " class='input_select input_select_" + name + classRequired + "'"
                  + classRequired
+                 + tooltipele
                  + " value='" + content + "'>"
                  + options
                  + "</select>"
@@ -284,7 +323,9 @@
 
          // iterate blocks from $contentline
          $.each(inputFields, function (index, inputField) {
-                 console.log("inputfieldName: " + configField["name"] + " contentfield:" + index + " field:" + $(inputField).val());
+                 console.log("inputfieldName: " + configField["name"] 
+                            + " contentfield:" + index 
+                            + " field:" + $(inputField).val());
                  data[configField["name"]] = $(inputField).val();
              }
          );
@@ -294,14 +335,16 @@
          // append input
          appendInputTextArea(config, $parent, configField, id, data, content);
          // append url
-         $parent.append("<a href='#' onclick=\"javascript:editKeywords('" + id + "'); return false;\" class='button'>Edit</a>");
+         $parent.append("<a href='#' onclick=\"javascript:editKeywords('" + id + "'); return false;\""
+                 + " class='button' data-tooltip='Auswahl der Schlüsselworte aus einer eigenen Tag-Bibliothek'>Edit</a>");
      }
 
      function appendInputText4Name(config, $parent, configField, id, data, content) {
          // append input
          appendInputText(config, $parent, configField, id, data, content);
          // append url
-         $parent.append("<a href='#' onclick=\"javascript:recalcName('" + id + "'); return false;\" class='button'>Recalc</a>");
+         $parent.append("<a href='#' onclick=\"javascript:recalcName('" + id + "'); return false;\""
+                 + " class='button' data-tooltip='Berechnung des Namens aus Präfix, Typ, Ort, Personen und Startdatum des Ausflugs'>Recalc</a>");
      }
 
      function appendInputText4Path(config, $parent, configField, id, data, content) {
@@ -309,7 +352,8 @@
          appendShowText(config, $parent, configField, id, data, content);
 
          // append url
-         $parent.append(" <a href='#' onclick=\"javascript:openImagePath('" + id + "'); return false;\" class='button'>Bilder</a>");
+         $parent.append(" <a href='#' onclick=\"javascript:openImagePath('" + id + "'); return false;\""
+                 + " class='button' data-tooltip='Anzeige des Bildpfades im rechten Fensterteil'>Bilder</a>");
      }
 
      function appendInputText4TrackFile(config, $parent, configField, id, data, content) {
@@ -317,7 +361,8 @@
          appendInputText(config, $parent, configField, id, data, content, " wrap='off' ");
 
          // append url
-         $parent.append("<span id='span_TrackFileUploader_" + id + "' class='span_TrackFileUploader'>Drag&Drop TrackUploader</span>");
+         $parent.append("<span id='span_TrackFileUploader_" + id + "' class='span_TrackFileUploader'"
+                 + " data-tooltip='Upload der Garmin-GPS-Datei per Drag&Drop'>Drag&Drop TrackUploader</span>");
 
          // Setup the Trackfile-Listener
          var dropZone = document.getElementById("input_TrackFile_" + id);
@@ -332,7 +377,10 @@
          appendInputTextArea(config, $parent, configField, id, data, content, " wrap='off' ");
 
          // append url
-         $parent.append(" <a href='#' onclick=\"javascript:openTrackMap('" + id + "'); return false;\" class='button'>Map</a><a href='#' onclick=\"javascript:syncTrackData('" + id + "'); return false;\" class='button'>Sync</a>");
+         $parent.append(" <a href='#' onclick=\"javascript:openTrackMap('" + id + "'); return false;\" "
+                 + " class='button' data-tooltip='Anzeige des Tracks auf der Karte mit Höhenprofil im rechten Fensterteil'>Map</a>"
+                 + "<a href='#' onclick=\"javascript:syncTrackData('" + id + "'); return false;\""
+                 + " class='button' data-tooltip='Zurücklesen der Trackdaten aus dem rechten Fensterteil in die Trackfelder (Distance, Aufstieg usw.)'>Sync</a>");
 
          // Setup the Trackfile-Listener
          var dropZone = document.getElementById("input_Track_" + id);
@@ -351,7 +399,8 @@
          var my = "input_" + name + "_" + id;
 
          // append url
-         $parent.append(" <a href='#' onclick=\"javascript:$('#" + my + "').val($('#" + track + "').val()); return false;\" class='button'>-&gt;My</a>");
+         $parent.append(" <a href='#' onclick=\"javascript:$('#" + my + "').val($('#" + track + "').val()); return false;\""
+                  + " class='button' data-tooltip='Sync des Trackdatums in die unter Config stehenden Datumsfelder'>-&gt;My</a>");
      }
 
      
@@ -437,10 +486,12 @@
          
          // append new ue
          var name = data[config.configName];
-         var $ueContainer = appendDiv4Element($container, "content_line_ue_" + id, "content_line_ue", name);
+         var $ueContainer = appendDiv4Element($container, "content_line_ue_" + id, 
+                "content_line_ue", name);
          
          // append new dataContainer
-         var $dataContainer = appendDiv4Element($container, "content_line_datacontainer_" + id, "content_line_datacontainer", "");
+         var $dataContainer = appendDiv4Element($container, "content_line_datacontainer_" + id, 
+                "content_line_datacontainer", "");
 
          // iterate datablocks
          for (var blockName in lstConfigBlocks) {
@@ -449,7 +500,8 @@
          }
          
          // append Toggler
-         jMATService.getPageLayoutService().appendBlockToggler("content_line_ue_" + id, "content_line_datacontainer_" + id);
+         jMATService.getPageLayoutService().appendBlockToggler("content_line_ue_" + id, 
+                "content_line_datacontainer_" + id);
 
          // return new line-JqueryObj
          return $container;
@@ -465,7 +517,8 @@
                  "");
 
          // append new ue
-         var $ueContainer = appendDiv4Element($container, "content_block_ue_" + id, "content_block_ue", ucFirstAllWords(blockName));
+         var $ueContainer = appendDiv4Element($container, "content_block_ue_" + id, 
+                "content_block_ue", ucFirstAllWords(blockName));
 
          // iterate fields
          for (var index = 0; index < lstConfigFields.length; ++index) {
@@ -514,21 +567,27 @@
 
      function appendDiv4Element($parent, id, styleClass, content) {
          // create new html-Element
-         var str = "<div id='" + id + "' class='" + styleClass + "'>" + content + "</div>";
+         var str = "<div id='" + id + "' class='" + styleClass + "'>" 
+                 + content + "</div>";
 
          // append to Parent
          var $element = $(str).appendTo($parent);
          return $element;
      }
 
-     function appendLabel4Element($parent, id, styleClass, content, parent, required) {
+     function appendLabel4Element($parent, id, styleClass, content, parent, required, tooltip) {
          var classRequired = "";
          if (required != "undefinded" && required) {
              classRequired = " required ";
          }
 
          // create new html-Element
-         var str = "<label id='" + id + "' class='label " + styleClass + classRequired + "' for='" + parent + "'>" + content + "</label>";
+         var tooltipele = "";
+         if (tooltip) {
+            tooltipele = " data-tooltip='" + tooltip + "' ";
+         }
+         var str = "<label id='" + id + "' class='label " + styleClass + classRequired + "' "
+                 + "for='" + parent + "' "+ tooltipele + ">" + content + "</label>";
 
          // append to Parent
          var $element = $(str).appendTo($parent);
@@ -939,7 +998,8 @@
              for (var index = 0; index < configKeywords.length; ++index) {
                  var keyword = configKeywords[index];
                  line += "<a class='a-addkeyword a-addkeyword-KW_" + keyword + "'"
-                      + " href='#' id='a_addkeyword_KW_" + keyword + "'>"+ keyword + "</a> ";
+                      + " href='#' id='a_addkeyword_KW_" + keyword + "'>"
+                      + keyword + "</a> ";
              }
               
              // end line
@@ -1054,7 +1114,8 @@
          // set data
          var lstConfigBlocks = {};
          lstConfigBlocks["base"] = new Array();
-         lstConfigBlocks["base"].push({ name : "Path", editor : appendInputText4Path, getter : getInputText});
+         lstConfigBlocks["base"].push({ name : "Path", 
+                                        editor : appendInputText4Path, getter : getInputText});
 
          lstConfigBlocks["vorgabe"] = new Array();
          lstConfigBlocks["vorgabe"].push({ name : "Ort"});
@@ -1062,42 +1123,104 @@
          lstConfigBlocks["vorgabe"].push({ name : "EndDate"});
 
          lstConfigBlocks["config"] = new Array();
-         lstConfigBlocks["config"].push({ name : "Type", editor : appendInputSelectRate, getter : getInputSelectRate, required: true});
-         lstConfigBlocks["config"].push({ name : "Praefix", editor : appendInputText, getter : getInputText});
-         lstConfigBlocks["config"].push({ name : "TimeCorrector", editor : appendInputText, getter : getInputText});
-         lstConfigBlocks["config"].push({ name : "MyOrt", editor : appendInputText, getter : getInputText, required: true});
-         lstConfigBlocks["config"].push({ name : "MyStartDate", editor : appendInputDate, getter : getInputText, required: true});
-         lstConfigBlocks["config"].push({ name : "MyEndDate", editor : appendInputDate, getter : getInputText, required: true});
+         lstConfigBlocks["config"].push({ name : "Type", 
+                                          editor : appendInputSelectRate, getter : getInputSelectRate, 
+                                          required: true, 
+                                          tooltip: "Die Art des Ausflugs (Bootsfahrt...)"});
+         lstConfigBlocks["config"].push({ name : "Praefix", 
+                                          editor : appendInputText, getter : getInputText, 
+                                          tooltip: "Ein eventuelles Präfix für die Berechnung des Ausflugsnamens bei Urlauben z.B. Alpen 2014"});
+         lstConfigBlocks["config"].push({ name : "TimeCorrector", 
+                                          editor : appendInputText, getter : getInputText, 
+                                          tooltip: "Bei zu spät umgestellter Sommer/Winterzeit die Korrektur in Stunden"});
+         lstConfigBlocks["config"].push({ name : "MyOrt", 
+                                          editor : appendInputText, getter : getInputText, required: true, 
+                                          tooltip: "Der Ort des Ausflugs"});
+         lstConfigBlocks["config"].push({ name : "MyStartDate", 
+                                          editor : appendInputDate, getter : getInputText, required: true, 
+                                          tooltip: "Das Startdatum des Ausflugs (initial berechnet aus den Bildern, kann durch Trackdaten oder manuell angepast werden)."});
+         lstConfigBlocks["config"].push({ name : "MyEndDate", 
+                                          editor : appendInputDate, getter : getInputText, required: true, 
+                                          tooltip: "Das Endedatum des Ausflugs (initial berechnet aus den Bildern, kann durch Trackdaten oder manuell angepast werden)."});
 
          lstConfigBlocks["data"] = new Array();
-         lstConfigBlocks["data"].push({ name : "Personen", editor : appendInputText, getter : getInputText});
-         lstConfigBlocks["data"].push({ name : "Name", editor : appendInputText4Name, getter : getInputText, required: true});
-         lstConfigBlocks["data"].push({ name : "Keywords", editor : appendInputText4Keywords, getter : getInputTextArea, required: true});
-         lstConfigBlocks["data"].push({ name : "Comment", editor : appendInputTextArea, getter : getInputTextArea, required: false});
+         lstConfigBlocks["data"].push({ name : "Personen", 
+                                        editor : appendInputText, getter : getInputText, 
+                                        tooltip: "Am Ausflug beteiligte Personen."});
+         lstConfigBlocks["data"].push({ name : "Name", 
+                                        editor : appendInputText4Name, getter : getInputText, required: true, 
+                                        tooltip: "Der Name des Ausflugs (kann auch über Recalc berechnet werden)."});
+         lstConfigBlocks["data"].push({ name : "Keywords", 
+                                        editor : appendInputText4Keywords, getter : getInputTextArea, required: true, 
+                                        tooltip: "Schlüsselworte die den Ausflug beschreiben."});
+         lstConfigBlocks["data"].push({ name : "Comment", 
+                                        editor : appendInputTextArea, getter : getInputTextArea, required: false, 
+                                        tooltip: "Ein Kommentar zum Ausflug (darauf fusst später die Beschreibung)."});
 
          lstConfigBlocks["rate"] = new Array();
-         lstConfigBlocks["rate"].push({ name : "GESAMT", editor : appendInputSelectRate, getter : getInputSelectRate});
-         lstConfigBlocks["rate"].push({ name : "WICHTIGKEIT", editor : appendInputSelectRate, getter : getInputSelectRate});
-         lstConfigBlocks["rate"].push({ name : "MOTIVE", editor : appendInputSelectRate, getter : getInputSelectRate});
-         lstConfigBlocks["rate"].push({ name : "BILDUNG", editor : appendInputSelectRate, getter : getInputSelectRate});
-         lstConfigBlocks["rate"].push({ name : "SCHWIERIGKEIT", editor : appendInputSelectRate, getter : getInputSelectRate});
-         lstConfigBlocks["rate"].push({ name : "AUSDAUER", editor : appendInputSelectRate, getter : getInputSelectRate});
-         lstConfigBlocks["rate"].push({ name : "KRAFT", editor : appendInputSelectRate, getter : getInputSelectRate});
-         lstConfigBlocks["rate"].push({ name : "MENTAL", editor : appendInputSelectRate, getter : getInputSelectRate});
+         lstConfigBlocks["rate"].push({ name : "GESAMT", 
+                                        editor : appendInputSelectRate, getter : getInputSelectRate, 
+                                        tooltip: "Die Gesamtbewertung des Ausflugs."});
+         lstConfigBlocks["rate"].push({ name : "WICHTIGKEIT", 
+                                        editor : appendInputSelectRate, getter : getInputSelectRate, 
+                                        tooltip: "Die persönliche Wichtigkeit des Ausflugs."});
+         lstConfigBlocks["rate"].push({ name : "MOTIVE",
+                                        editor : appendInputSelectRate, getter : getInputSelectRate, 
+                                        tooltip: "Die Bewertung der Motive des Ausflugs."});
+         lstConfigBlocks["rate"].push({ name : "BILDUNG", 
+                                        editor : appendInputSelectRate, getter : getInputSelectRate, 
+                                        tooltip: "Die optionale Bewertung der Bildung des Ausflugs."});
+         lstConfigBlocks["rate"].push({ name : "SCHWIERIGKEIT",
+                                        editor : appendInputSelectRate, getter : getInputSelectRate, 
+                                        tooltip: "Die Einschätzung der Gesamtschwierigkeit des Ausflugs."});
+         lstConfigBlocks["rate"].push({ name : "AUSDAUER",
+                                        editor : appendInputSelectRate, getter : getInputSelectRate, 
+                                        tooltip: "Die Einschätzung der Ausdauer des Ausflugs."});
+         lstConfigBlocks["rate"].push({ name : "KRAFT",
+                                        editor : appendInputSelectRate, getter : getInputSelectRate, 
+                                        tooltip: "Die Einschätzung des Kraftaufwandes des Ausflugs."});
+         lstConfigBlocks["rate"].push({ name : "MENTAL",
+                                        editor : appendInputSelectRate, getter : getInputSelectRate, 
+                                        tooltip: "Die Einschätzung des mentalen Anspruchs des Ausflugs."});
 
          lstConfigBlocks["track"] = new Array();
-         lstConfigBlocks["track"].push({ name : "TrackFile", editor : appendInputText4TrackFile, getter : getInputTextArea, required: false});
-         lstConfigBlocks["track"].push({ name : "Track", editor : appendInputText4Track, getter : getInputTextArea, required: false});
-         lstConfigBlocks["track"].push({ name : "TrackTimeCorrector", editor : appendInputText, getter : getInputText, defaultvalue: "2"});
-         lstConfigBlocks["track"].push({ name : "TrackStartDate", editor : appendInputText4DateSync, getter : getInputText});
-         lstConfigBlocks["track"].push({ name : "TrackEndDate", editor : appendInputText4DateSync, getter : getInputText});
-         lstConfigBlocks["track"].push({ name : "Dist", editor : appendInputText, getter : getInputText});
-         lstConfigBlocks["track"].push({ name : "AltMin", editor : appendInputText, getter : getInputText});
-         lstConfigBlocks["track"].push({ name : "AltMax", editor : appendInputText, getter : getInputText});
-         lstConfigBlocks["track"].push({ name : "AltAsc", editor : appendInputText, getter : getInputText});
-         lstConfigBlocks["track"].push({ name : "AltDesc", editor : appendInputText, getter : getInputText});
-         lstConfigBlocks["track"].push({ name : "AltStart", editor : appendInputText, getter : getInputText});
-         lstConfigBlocks["track"].push({ name : "AltEnd", editor : appendInputText, getter : getInputText});
+         lstConfigBlocks["track"].push({ name : "TrackFile",
+                                         editor : appendInputText4TrackFile, getter : getInputTextArea, required: false, 
+                                         tooltip: "Name der zugeordneten Garmin-GPX-Datei mit dem Track (kann per Drag&Drop eingefugegt werden)."});
+         lstConfigBlocks["track"].push({ name : "Track",
+                                         editor : appendInputText4Track, getter : getInputTextArea, required: false, 
+                                         tooltip: "Der Inhalt der Garmin-GPX-Datei mit dem Track (kann per Drag&Drop eingefugegt werden)."});
+         lstConfigBlocks["track"].push({ name : "TrackTimeCorrector",
+                                         editor : appendInputText, getter : getInputText, defaultvalue: "2", 
+                                         tooltip: "Der Faktor zur Korrektur der Trackzeit in Stunden beim Track-Sync (GPX-Zeiten sind UTC - default ist 2h für Sommerzeit Mitteleuropa)."});
+         lstConfigBlocks["track"].push({ name : "TrackStartDate",
+                                         editor : appendInputText4DateSync, getter : getInputText, 
+                                         tooltip: "Das aus dem Track berechnete Startdatum des Ausflugs (kann per ->My in das Config-Startdatum übertragen werden)"});
+         lstConfigBlocks["track"].push({ name : "TrackEndDate",
+                                         editor : appendInputText4DateSync, getter : getInputText, 
+                                         tooltip: "Das aus dem Track berechnete Enddatum des Ausflugs (kann per ->My in das Config-Enddatum übertragen werden)"});
+         lstConfigBlocks["track"].push({ name : "Dist",
+                                         editor : appendInputText, getter : getInputText, 
+                                         tooltip: "Die aus dem Track berechnete zurückgelegte Entfernung in km."});
+         lstConfigBlocks["track"].push({ name : "AltMin",
+                                         editor : appendInputText, getter : getInputText, 
+                                         tooltip: "Die aus dem Track berechnete minimale Höhe in m."});
+         lstConfigBlocks["track"].push({ name : "AltMax",
+                                         editor : appendInputText, getter : getInputText, 
+                                         tooltip: "Die aus dem Track berechnete maximale Höhe in m."});
+         lstConfigBlocks["track"].push({ name : "AltAsc",
+                                         editor : appendInputText, getter : getInputText, 
+                                         tooltip: "Der aus dem Track berechnete Aufstieg in Hm."});
+         lstConfigBlocks["track"].push({ name : "AltDesc",
+                                         editor : appendInputText, getter : getInputText, 
+                                         tooltip: "Der aus dem Track berechnete Abstieg in Hm."});
+         lstConfigBlocks["track"].push({ name : "AltStart",
+                                         editor : appendInputText, getter : getInputText, 
+                                         tooltip: "Der aus dem Track berechnete Starthöhe in m."});
+         lstConfigBlocks["track"].push({ name : "AltEnd",
+                                         editor : appendInputText, getter : getInputText, 
+                                         tooltip: "Der aus dem Track berechnete Zielhöhe in m."});
+
 
          // set config
          configContainer.configBlocks = lstConfigBlocks;
@@ -1389,6 +1512,40 @@ input.required:invalid , textarea.required:invalid, select.required:invalid {
     overflow-y:auto;
 }
 
+/** CSS3-Tooltips siehe http://t3n.de/news/css3-individuelle-tooltips-ohne-356353/ **/
+a {
+  position: relative;
+}
+/** show content **/
+a[data-csstooltip]:before {
+  position: absolute;
+  left: 0px;
+  top: -40px;
+  background-color: #ff0000;
+  color: #ffffff;
+  height: 30px;
+  line-height: 30px;
+  border-radius: 5px;
+  padding: 0 15px;
+  content: attr(data-csstooltip);
+  white-space: nowrap;
+  display: none;
+}
+/** show arrow **/
+a[data-csstooltip]:after {
+  position: absolute;
+  left: 15px;
+  top: -10px;
+  border-top: 7px solid #ff0000;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  content: "";
+  display: none;
+}
+/** when hover **/
+a[data-csstooltip]:hover:after, a[data-csstooltip]:hover:before {
+  display: block;
+}
 /** Head **/
 .head_line {
     display: none;
@@ -1740,6 +1897,56 @@ input.required:invalid , textarea.required:invalid, select.required:invalid {
 
 </style>
 
+<!-- JQuery Tools -->
+<script type="text/javascript" src="http://code.jquery.com/ui/1.11.1/jquery-ui.js"></script>
+<script type="text/javascript">
+
+    // overload tooltip from title as seen on http://stackoverflow.com/questions/15734105/jquery-ui-tooltip-does-not-support-html-content
+    $("[data-tooltip]").each(function(i, e) {
+        var tag = $(e);
+        if (tag.is("[title]") === false) {
+            tag.attr("title", "");
+        }
+    });
+
+    $(document).tooltip({
+        items: "[data-tooltip]",
+        content: function () {
+            return $(this).attr("data-tooltip");
+        }
+    });
+</script>
+<style>
+/* Component containers
+----------------------------------*/
+.ui-widget-content {
+	background: #ffffff url("images/ui-bg_flat_75_ffffff_40x100.png") 50% 50% repeat-x;
+	color: #222222;
+}
+.ui-widget-content a {
+	color: #222222;
+}
+.ui-widget-header {
+	background: #cccccc url("images/ui-bg_highlight-soft_75_cccccc_1x100.png") 50% 50% repeat-x;
+	color: #222222;
+}
+.ui-widget-header a {
+	color: #222222;
+}
+
+.ui-tooltip {
+	padding: 8px;
+	position: absolute;
+	z-index: 9999;
+	max-width: 300px;
+	-webkit-box-shadow: 0 0 5px #aaa;
+	box-shadow: 0 0 5px #aaa;
+    background: #CAF1F7;
+}
+body .ui-tooltip {
+	border-width: 2px;
+}
+</style>
 
 
 <!-- APIs fuer Maps -->
@@ -1750,7 +1957,6 @@ input.required:invalid , textarea.required:invalid, select.required:invalid {
 
 <!-- Charts -->
 <!--[if lt IE 9]><script language="javascript" type="text/javascript" src="http://www.michas-ausflugstipps.de/./jqplot/excanvas.js"></script><![endif]-->
-<script type="text/javascript" src="http://www.michas-ausflugstipps.de/./jqplot/jquery.min.js"></script>
 <script type="text/javascript" src="http://www.michas-ausflugstipps.de/./jqplot/jquery.jqplot.min.js"></script>
 <link rel="stylesheet" type="text/css" href="http://www.michas-ausflugstipps.de//./jqplot/jquery.jqplot.css" />
 <script>
@@ -1765,7 +1971,10 @@ input.required:invalid , textarea.required:invalid, select.required:invalid {
      * fuegt FormRowToggler an Elternelement an
      */
     JMATPageLayout.prototype.appendBlockToggler = function(parentId, toggleId) {
-        var html = jMATService.getPageLayoutService().createBlockTogglerHtml(toggleId, toggleId, "<img src='http://www.michas-ausflugstipps.de/./images/icon-up.gif' class='icon-blocktoggler icon-blocktoggleron'>", "<img src='http://www.michas-ausflugstipps.de/./images/icon-down.gif' class='icon-blocktoggler icon-blocktogglerof'>", "", "");
+        var html = jMATService.getPageLayoutService().createBlockTogglerHtml(toggleId, toggleId, 
+                "<img src='http://www.michas-ausflugstipps.de/./images/icon-up.gif' class='icon-blocktoggler icon-blocktoggleron'>", 
+                "<img src='http://www.michas-ausflugstipps.de/./images/icon-down.gif' class='icon-blocktoggler icon-blocktogglerof'>", 
+                "", "");
         jMATService.getJMSServiceObj().appendHtml(html,parentId, "blockToggler");
     }
 
@@ -1789,13 +1998,15 @@ input.required:invalid , textarea.required:invalid, select.required:invalid {
         var constTagNameRtept = "trkpt";
 
         if (this.jmsLoggerJMSGeoMapGPXLoad && this.jmsLoggerJMSGeoMapGPXLoad.isDebug) 
-            this.jmsLoggerJMSGeoMapGPXLoad.logDebug("JMSGeoMapGPXLoad.parseXMLDocument me:" + this + " url:" + this.url);
+            this.jmsLoggerJMSGeoMapGPXLoad.logDebug("JMSGeoMapGPXLoad.parseXMLDocument me:" 
+                    + this + " url:" + this.url);
         if (doc) {
             /* Tracks extrahieren
              */
             var lstTags = doc.getElementsByTagName(constTagNameRte);
             if (this.jmsLoggerJMSGeoMapGPXLoad && this.jmsLoggerJMSGeoMapGPXLoad.isDebug) 
-                this.jmsLoggerJMSGeoMapGPXLoad.logDebug("JMSGeoMapGPXLoad.parseXMLDocument valid document parsing Tracks me:" + this + " url:" + this.url + " LstRTE:" + lstTags.length);
+                this.jmsLoggerJMSGeoMapGPXLoad.logDebug("JMSGeoMapGPXLoad.parseXMLDocument valid document parsing Tracks me:" 
+                        + this + " url:" + this.url + " LstRTE:" + lstTags.length);
             var lstFeatures = [];
 
             // Tags durchlaufen
@@ -1886,11 +2097,14 @@ input.required:invalid , textarea.required:invalid, select.required:invalid {
                 }
                 // Tour anlegen
                 if (this.jmsLoggerJMSGeoMapGPXLoad && this.jmsLoggerJMSGeoMapGPXLoad.isDebug) 
-                    this.jmsLoggerJMSGeoMapGPXLoad.logDebug("JMSGeoMapGPXLoad.parseXMLDocument add Track me:" + this + " url:" + this.url + " title:" + title + " start:" + geoPoint + " color:" + color);
-                this.getJMSGeoMapObj().addTour(null, this.strNameLayer, title, description, startPoint, pointList,
+                    this.jmsLoggerJMSGeoMapGPXLoad.logDebug("JMSGeoMapGPXLoad.parseXMLDocument add Track me:" 
+                            + this + " url:" + this.url + " title:" + title 
+                            + " start:" + geoPoint + " color:" + color);
+                this.getJMSGeoMapObj().addTour(null, this.strNameLayer, title, 
+                        description, startPoint, pointList,
                         {
-                    color: color,
-                    loadInfoWindowType: JMSGeoMapFeature.TYPE_LOADINFOWINDOW_LOCAL
+                            color: color,
+                            loadInfoWindowType: JMSGeoMapFeature.TYPE_LOADINFOWINDOW_LOCAL
                         }
                 );
             }
@@ -1960,16 +2174,18 @@ input.required:invalid , textarea.required:invalid, select.required:invalid {
             trackContent = OpenLayers.parseXMLString(trackContent);
         }
         
-        // remove old tracks
-        mapMP.removeJMSGeoMapFeatures("TOUR");
-        mapMP.removeJMSGeoMapFeatures("TRACK");
+        // remove old charts
+        $('chartdiv').html("");
 
         // load Chart
         msChartObj = new JMSGeoProfile('chartdiv');
         var statusInfoText = "Lade Daten vom Server";
         var mpChartGPXLoad = new JMSGeoMapGPXLoad(msChartObj, "mplayer", urlGPX, statusInfoText);
         mpChartGPXLoad.parseXMLDocument(trackContent);
-        
+
+        // remove old tracks
+        mapMP.removeJMSGeoMapFeatures("TOUR");
+        mapMP.removeJMSGeoMapFeatures("TRACK");
 
         // load Map
         var mpGPXLoad = new JMSGeoMapGPXLoad(mapMP, "mplayer", urlGPX, statusInfoText);
@@ -2113,8 +2329,8 @@ a.osm_search_content {
 <div id="app">
     <div id="tools">
       <input type="file" id="importJSONFile" name="importJSONFile" value="Import JSON" />
-      <a href="#" id="exportJSONLink" class="button exportLink">Export as JSON</a> 
-      <a href="#" id="exportBatchLink" class="button exportLink">Export as Batch</a>
+      <a href="#" id="exportJSONLink" class="button exportLink" data-tooltip="Export der Daten im JSON-Format zur Zwischenspeicherung">Export as JSON</a> 
+      <a href="#" id="exportBatchLink" class="button exportLink" data-tooltip="Generierung der Batch-Import-Befehle">Export as Batch</a>
     </div>
     <div id="toolsDummy"> </div>
 
@@ -2212,7 +2428,9 @@ a.osm_search_content {
         var width = "600px";
         
         // add iframe
-        $( "<iframe name='images' id='images' class='images' src='' width='" + width + "'  height='" + height + "'>" ).insertAfter( "#mapContainer" );
+        $( "<iframe name='images' id='images' class='images' src=''"
+                 + " width='" + width + "'  height='" + height + 
+                 "'>").insertAfter( "#mapContainer" );
         $("#container").width("520px");
         
         // load App
@@ -2232,7 +2450,8 @@ a.osm_search_content {
         var height = window.innerHeight;
         var width = window.innerWidth;
         
-        console.log("setup size width:" + window.innerWidth + " height:" + window.innerHeight);
+        console.log("setup size width:" + window.innerWidth 
+                + " height:" + window.innerHeight);
         
         if (width > ($("#container").width() + 200)) {
             $("#app").width(width);
