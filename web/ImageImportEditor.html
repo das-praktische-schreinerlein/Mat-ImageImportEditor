@@ -971,6 +971,68 @@
          downloadAsFile($link, bat, fileName, "application/text", "utf-8");
      }
 
+     function downloadAsSqlFile($link, data, fileName, config) {
+         // data
+         var sql = "";
+         
+         // configure UpdateFields
+         var lstDBUpdateFields =  new Array();        
+         lstDBUpdateFields.push('K_NAME');
+         lstDBUpdateFields.push('K_DISTANCE');
+         lstDBUpdateFields.push('K_ALTITUDE_MIN');
+         lstDBUpdateFields.push('K_ALTITUDE_MAX');
+         lstDBUpdateFields.push('K_ALTITUDE_ASC');
+         lstDBUpdateFields.push('K_ALTITUDE_DESC');
+         lstDBUpdateFields.push('K_TYPE');
+         lstDBUpdateFields.push('K_RATE_SCHWIERIGKEIT');
+         lstDBUpdateFields.push('K_RATE_AUSDAUER');
+         lstDBUpdateFields.push('K_RATE_KRAFT');
+         lstDBUpdateFields.push('K_RATE_MENTAL');
+         lstDBUpdateFields.push('K_RATE_BILDUNG');
+         lstDBUpdateFields.push('K_RATE_MOTIVE');
+         lstDBUpdateFields.push('K_RATE_WICHTIGKEIT');
+         lstDBUpdateFields.push('K_RATE_GESAMT');
+
+         // configure Mapping
+         var hshMapping = new Array();
+         var lstConfigBlocks = config.configBlocks;
+         // iterate datablocks
+         for (var blockName in lstConfigBlocks) {
+             var lstConfigFields = config.configBlocks[blockName];
+             // iterate fields
+             for (var index = 0; index < lstConfigFields.length; ++index) {
+                 // get fieldConfig
+                 var fieldConfig = lstConfigFields[index];
+                 // add to hshMapping
+                 if (fieldConfig.sqlname && fieldConfig.sqlname != "undefined") {
+                     hshMapping[fieldConfig.sqlname] = fieldConfig.name;
+                 }
+             }
+         }
+
+         for ( var index = 0; index < data.length; ++index) {
+             var dataObj = data[index];
+             var mysql = "update KATEGORIE set  ";
+             
+             // iterate fields and add sql
+             for (var index2 = 0; index2 < lstDBUpdateFields.length; ++index2) {
+                 // get fieldConfig
+                 var dbFieldName = lstDBUpdateFields[index2];
+                 if (hshMapping[dbFieldName] && hshMapping[dbFieldName] != "undefined") {
+                     mysql += " " + dbFieldName + "='" + dataObj[hshMapping[dbFieldName]] + "',";
+                 }
+             }
+             // trim last ","
+             mysql = mysql.replace(/\,$/, "");
+             mysql += " where K_ID in (select distinct K_ID from IMAGES where I_ORIGPATH like \"" + dataObj["Path"].replace(/\\/g, "/") + "/%\")" 
+                 + ";\n";
+                 
+             sql += mysql;
+         }
+
+         // update link
+         downloadAsFile($link, sql, fileName, "application/text", "utf-8");
+     }
      
      /* 
       * ########################################
@@ -1094,6 +1156,13 @@
                  return false;
              }
          ;
+         document.getElementById("exportSqlLink").onclick = function(event, link) {
+                 extractTableContent(configContainer, $container, dataContainer);
+                 downloadAsSqlFile($(this), dataContainer.data, 'update.sql', configContainer);
+                 event.preventDefault();
+                 return false;
+             }
+         ;
          
          // init keywordseditor
          initKeywordsEditor(configContainer, $("#divKeywordsEditor"));
@@ -1123,7 +1192,8 @@
          lstConfigBlocks["vorgabe"].push({ name : "EndDate"});
 
          lstConfigBlocks["config"] = new Array();
-         lstConfigBlocks["config"].push({ name : "Type", 
+         lstConfigBlocks["config"].push({ name : "Type",
+                                          sqlname : 'K_TYPE',
                                           editor : appendInputSelectRate, getter : getInputSelectRate, 
                                           required: true, 
                                           tooltip: "Die Art des Ausflugs (Bootsfahrt...)"});
@@ -1137,9 +1207,11 @@
                                           editor : appendInputText, getter : getInputText, required: true, 
                                           tooltip: "Der Ort des Ausflugs"});
          lstConfigBlocks["config"].push({ name : "MyStartDate", 
+                                          sqlname : 'K_DATEVON',
                                           editor : appendInputDate, getter : getInputText, required: true, 
                                           tooltip: "Das Startdatum des Ausflugs (initial berechnet aus den Bildern, kann durch Trackdaten oder manuell angepast werden)."});
          lstConfigBlocks["config"].push({ name : "MyEndDate", 
+                                          sqlname : 'K_DATEBIS',
                                           editor : appendInputDate, getter : getInputText, required: true, 
                                           tooltip: "Das Endedatum des Ausflugs (initial berechnet aus den Bildern, kann durch Trackdaten oder manuell angepast werden)."});
 
@@ -1148,38 +1220,48 @@
                                         editor : appendInputText, getter : getInputText, 
                                         tooltip: "Am Ausflug beteiligte Personen."});
          lstConfigBlocks["data"].push({ name : "Name", 
+                                        sqlname : 'K_NAME',
                                         editor : appendInputText4Name, getter : getInputText, required: true, 
                                         tooltip: "Der Name des Ausflugs (kann auch über Recalc berechnet werden)."});
          lstConfigBlocks["data"].push({ name : "Keywords", 
                                         editor : appendInputText4Keywords, getter : getInputTextArea, required: true, 
                                         tooltip: "Schlüsselworte die den Ausflug beschreiben."});
          lstConfigBlocks["data"].push({ name : "Comment", 
+                                        sqlname : 'K_META_SHORTDESC',
                                         editor : appendInputTextArea, getter : getInputTextArea, required: false, 
                                         tooltip: "Ein Kommentar zum Ausflug (darauf fusst später die Beschreibung)."});
 
          lstConfigBlocks["rate"] = new Array();
          lstConfigBlocks["rate"].push({ name : "GESAMT", 
+                                        sqlname : 'K_RATE_GESAMT',
                                         editor : appendInputSelectRate, getter : getInputSelectRate, 
                                         tooltip: "Die Gesamtbewertung des Ausflugs."});
          lstConfigBlocks["rate"].push({ name : "WICHTIGKEIT", 
+                                        sqlname : 'K_RATE_WICHTIGKEIT',
                                         editor : appendInputSelectRate, getter : getInputSelectRate, 
                                         tooltip: "Die persönliche Wichtigkeit des Ausflugs."});
          lstConfigBlocks["rate"].push({ name : "MOTIVE",
+                                        sqlname : 'K_RATE_MOTIVE',
                                         editor : appendInputSelectRate, getter : getInputSelectRate, 
                                         tooltip: "Die Bewertung der Motive des Ausflugs."});
          lstConfigBlocks["rate"].push({ name : "BILDUNG", 
+                                        sqlname : 'K_RATE_BILDUNG',
                                         editor : appendInputSelectRate, getter : getInputSelectRate, 
                                         tooltip: "Die optionale Bewertung der Bildung des Ausflugs."});
          lstConfigBlocks["rate"].push({ name : "SCHWIERIGKEIT",
+                                        sqlname : 'K_RATE_SCHWIERIGKEIT',
                                         editor : appendInputSelectRate, getter : getInputSelectRate, 
                                         tooltip: "Die Einschätzung der Gesamtschwierigkeit des Ausflugs."});
          lstConfigBlocks["rate"].push({ name : "AUSDAUER",
+                                        sqlname : 'K_RATE_AUSDAUER',
                                         editor : appendInputSelectRate, getter : getInputSelectRate, 
                                         tooltip: "Die Einschätzung der Ausdauer des Ausflugs."});
          lstConfigBlocks["rate"].push({ name : "KRAFT",
+                                        sqlname : 'K_RATE_KRAFT',
                                         editor : appendInputSelectRate, getter : getInputSelectRate, 
                                         tooltip: "Die Einschätzung des Kraftaufwandes des Ausflugs."});
          lstConfigBlocks["rate"].push({ name : "MENTAL",
+                                        sqlname : 'K_RATE_MENTAL',
                                         editor : appendInputSelectRate, getter : getInputSelectRate, 
                                         tooltip: "Die Einschätzung des mentalen Anspruchs des Ausflugs."});
 
@@ -1188,6 +1270,7 @@
                                          editor : appendInputText4TrackFile, getter : getInputTextArea, required: false, 
                                          tooltip: "Name der zugeordneten Garmin-GPX-Datei mit dem Track (kann per Drag&Drop eingefugegt werden)."});
          lstConfigBlocks["track"].push({ name : "Track",
+                                         sqlname : 'K_GPSTRACKS_TXT',
                                          editor : appendInputText4Track, getter : getInputTextArea, required: false, 
                                          tooltip: "Der Inhalt der Garmin-GPX-Datei mit dem Track (kann per Drag&Drop eingefugegt werden)."});
          lstConfigBlocks["track"].push({ name : "TrackTimeCorrector",
@@ -1200,18 +1283,23 @@
                                          editor : appendInputText4DateSync, getter : getInputText, 
                                          tooltip: "Das aus dem Track berechnete Enddatum des Ausflugs (kann per ->My in das Config-Enddatum übertragen werden)"});
          lstConfigBlocks["track"].push({ name : "Dist",
+                                         sqlname : 'K_DISTANCE',
                                          editor : appendInputText, getter : getInputText, 
                                          tooltip: "Die aus dem Track berechnete zurückgelegte Entfernung in km."});
          lstConfigBlocks["track"].push({ name : "AltMin",
+                                         sqlname : 'K_ALTITUDE_MIN',
                                          editor : appendInputText, getter : getInputText, 
                                          tooltip: "Die aus dem Track berechnete minimale Höhe in m."});
          lstConfigBlocks["track"].push({ name : "AltMax",
+                                         sqlname : 'K_ALTITUDE_MAX',
                                          editor : appendInputText, getter : getInputText, 
                                          tooltip: "Die aus dem Track berechnete maximale Höhe in m."});
          lstConfigBlocks["track"].push({ name : "AltAsc",
+                                         sqlname : 'K_ALTITUDE_ASC',
                                          editor : appendInputText, getter : getInputText, 
                                          tooltip: "Der aus dem Track berechnete Aufstieg in Hm."});
          lstConfigBlocks["track"].push({ name : "AltDesc",
+                                         sqlname : 'K_ALTITUDE_DESC',
                                          editor : appendInputText, getter : getInputText, 
                                          tooltip: "Der aus dem Track berechnete Abstieg in Hm."});
          lstConfigBlocks["track"].push({ name : "AltStart",
@@ -1480,6 +1568,12 @@ input.required:invalid , textarea.required:invalid, select.required:invalid {
 
 .exportLink {
     display: none;
+}
+
+span.title {
+    font-size: 12px;
+    font-weight: bold;
+    color: white;
 }
 
 #container {
@@ -2328,9 +2422,12 @@ a.osm_search_content {
 
 <div id="app">
     <div id="tools">
+      <span class="title">ImageImportEditor</span>
+      <a href="#" id="help" class="button" data-tooltip="Mit dem ImageImportEditor lassen sich die über den ImageDirImportEntryGenerator erzeugten JSON-Dateien mit den Ausflügen bearbeiten. Nach dem Laden der Datei können die Daten der einzelnen Ausflüge angepasst, die Bilder angesehen, die Ausflüge bewertet, sowie mit Garmin-GPX-Tracks und den daraus auslesbaren Daten vervollständigt werden.  Anschließend können die Daten wieder als JSON zwischengespeichert, als Batch-Datei zum Import in die MAT-MediadDB und als SQL-Update für die Vervollständigung der MAT-MediadDB exportiert werden.">Help!</a> 
       <input type="file" id="importJSONFile" name="importJSONFile" value="Import JSON" />
       <a href="#" id="exportJSONLink" class="button exportLink" data-tooltip="Export der Daten im JSON-Format zur Zwischenspeicherung">Export as JSON</a> 
-      <a href="#" id="exportBatchLink" class="button exportLink" data-tooltip="Generierung der Batch-Import-Befehle">Export as Batch</a>
+      <a href="#" id="exportBatchLink" class="button exportLink" data-tooltip="Generierung der Batch-Import-Befehle für die MAT-MediadDB">Export as Batch</a>
+      <a href="#" id="exportSqlLink" class="button exportLink" data-tooltip="Generierung der Sql-Update-Befehle für die MAT-MediadDB">Export as SQL</a>
     </div>
     <div id="toolsDummy"> </div>
 
@@ -2431,6 +2528,7 @@ a.osm_search_content {
         $( "<iframe name='images' id='images' class='images' src=''"
                  + " width='" + width + "'  height='" + height + 
                  "'>").insertAfter( "#mapContainer" );
+        // resize container
         $("#container").width("520px");
         
         // load App
