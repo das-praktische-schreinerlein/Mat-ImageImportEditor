@@ -14,6 +14,14 @@ This is a subset of managment-tools created for the import of images on backend 
 
 # History and milestones
 - 2014 
+   - summersession with many new features
+      - show imagedir in iframe
+      - drag&drop gpx-track-upload
+      - calc data from track
+      - show track as map and profile
+      - layout and ergonomic improvements
+      - export as sql
+- 2014 
    - prepared the tools for going public (documentation...) 
    - separated the public-tools
 - 2014
@@ -67,6 +75,11 @@ firefox web\ImageImportEditor.html
 ```bat
 d:\tmp\importDigiFotos-test.json
 ```
+
+# Thanks to
+- https://github.com/aquarion/jqplot
+- https://github.com/jquery/jquery
+- https://github.com/openlayers/openlayers
 
 # License
 ```
